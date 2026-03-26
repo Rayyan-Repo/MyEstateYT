@@ -1,45 +1,70 @@
 <?php
+session_start();
 include 'components/connect.php';
+include 'components/mailer.php';
 
 if(isset($_COOKIE['user_id'])){
    header('location:home.php');
    exit();
 }
 
+// PASSWORD STRENGTH CHECK
+function isStrongPassword($pass) {
+   if(strlen($pass) < 8) return false;
+   if(!preg_match('/[A-Z]/', $pass)) return false;
+   if(!preg_match('/[a-z]/', $pass)) return false;
+   if(!preg_match('/[0-9]/', $pass)) return false;
+   if(!preg_match('/[\W_]/', $pass)) return false;
+   return true;
+}
+
 if(isset($_POST['submit'])){
-   $id = create_unique_id();
-   $name = $_POST['name'];
-   $name = filter_var($name, FILTER_SANITIZE_STRING);
-   $number = $_POST['number'];
-   $number = filter_var($number, FILTER_SANITIZE_STRING);
-   $email = $_POST['email'];
-   $email = filter_var($email, FILTER_SANITIZE_STRING);
-   $pass = sha1($_POST['pass']);
-   $pass = filter_var($pass, FILTER_SANITIZE_STRING);
-   $c_pass = sha1($_POST['c_pass']);
-   $c_pass = filter_var($c_pass, FILTER_SANITIZE_STRING);
+   $name   = trim(filter_var($_POST['name'],   FILTER_SANITIZE_STRING));
+   $number = trim(filter_var($_POST['number'], FILTER_SANITIZE_STRING));
+   $email  = trim(filter_var($_POST['email'],  FILTER_SANITIZE_EMAIL));
+   $pass   = $_POST['pass'];
+   $c_pass = $_POST['c_pass'];
 
-   $select_users = $conn->prepare("SELECT * FROM `users` WHERE email = ?");
-   $select_users->execute([$email]);
+   // Validate real email format
+   if(!filter_var($email, FILTER_VALIDATE_EMAIL)){
+      $warning_msg[] = 'Please enter a valid email address!';
+   } elseif(!isStrongPassword($pass)){
+      $warning_msg[] = 'Password must be at least 8 characters with uppercase, lowercase, number & special character!';
+   } elseif($pass !== $c_pass){
+      $warning_msg[] = 'Passwords do not match!';
+   } else {
+      // Check if email exists
+      $chk = $conn->prepare("SELECT id FROM users WHERE email = ?");
+      $chk->execute([$email]);
+      if($chk->rowCount() > 0){
+         $warning_msg[] = 'Email already registered!';
+      } else {
+         // Generate OTP
+         $otp        = generateOTP();
+         $expires_at_query = $conn->query("SELECT DATE_ADD(NOW(), INTERVAL 5 MINUTE) as exp")->fetch();
+         $expires_at = $expires_at_query['exp']; // 5 minutes from MySQL time
 
-   if($select_users->rowCount() > 0){
-      $warning_msg[] = 'Email already taken!';
-   }else{
-      if($pass != $c_pass){
-         $warning_msg[] = 'Passwords do not match!';
-      }else{
-         $insert_user = $conn->prepare("INSERT INTO `users`(id, name, number, email, password) VALUES(?,?,?,?,?)");
-         $insert_user->execute([$id, $name, $number, $email, $c_pass]);
-         if($insert_user){
-            $verify_users = $conn->prepare("SELECT * FROM `users` WHERE email = ? AND password = ? LIMIT 1");
-            $verify_users->execute([$email, $pass]);
-            $row = $verify_users->fetch(PDO::FETCH_ASSOC);
-            if($verify_users->rowCount() > 0){
-               setcookie('user_id', $row['id'], time() + 60*60*24*30, '/');
-               header('location:home.php');
-            }else{
-               $error_msg[] = 'Something went wrong!';
-            }
+         // Delete old OTPs for this email
+         $del = $conn->prepare("DELETE FROM otp_verification WHERE email = ?");
+         $del->execute([$email]);
+
+         // Insert new OTP
+         $ins = $conn->prepare("INSERT INTO otp_verification(email, otp, expires_at) VALUES(?,?,?)");
+         $ins->execute([$email, $otp, $expires_at]);
+
+         // Send OTP email
+         $sent = sendMail($email, $name, 'MyEstate - Email Verification OTP', getOTPEmailTemplate($otp, $name));
+
+         if($sent){
+            // Store registration data in session temporarily
+            $_SESSION['reg_name']   = $name;
+            $_SESSION['reg_number'] = $number;
+            $_SESSION['reg_email']  = $email;
+            $_SESSION['reg_pass']   = sha1($pass);
+            header('location:verify_otp.php');
+            exit();
+         } else {
+            $error_msg[] = 'Failed to send OTP. Please try again!';
          }
       }
    }
@@ -65,8 +90,6 @@ if(isset($_POST['submit'])){
 *{margin:0;padding:0;box-sizing:border-box;}
 html{font-size:62.5%;scroll-behavior:smooth;}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
-
-/* NAV — same as login */
 .nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:1.6rem 6%;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#fff0f0,#fde0e0);border-bottom:1px solid var(--line);box-shadow:0 2px 20px rgba(214,40,40,0.08);}
 .nav-logo{font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:700;color:var(--ink);text-decoration:none;}
 .nav-logo span{font-style:italic;color:var(--r);}
@@ -89,12 +112,10 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);min-h
 .nav-mobile a:hover{color:var(--r);}
 .nav-mobile-close{position:absolute;top:2rem;right:2.5rem;font-size:2.4rem;cursor:pointer;color:var(--r);}
 .nav-mobile-btns{display:flex;gap:1rem;margin-top:1rem;}
-
-/* FORM PAGE */
 .form-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:12rem 2rem 8rem;background:linear-gradient(135deg,#fff8f8 0%,#fdf1f1 40%,#fae6e6 100%);position:relative;overflow:hidden;}
 .form-page::before{content:'';position:absolute;top:-10%;right:-5%;width:55rem;height:55rem;border-radius:50%;background:radial-gradient(circle,rgba(214,40,40,0.07) 0%,transparent 70%);pointer-events:none;}
 .form-page::after{content:'';position:absolute;bottom:-10%;left:-5%;width:45rem;height:45rem;border-radius:50%;background:radial-gradient(circle,rgba(214,40,40,0.05) 0%,transparent 70%);pointer-events:none;}
-.form-card{background:var(--white);border-radius:2.8rem;padding:4.5rem;max-width:48rem;width:100%;box-shadow:0 24px 80px rgba(214,40,40,0.13);border:1.5px solid var(--line);position:relative;z-index:2;animation:popUp 0.5s var(--ease) both;}
+.form-card{background:var(--white);border-radius:2.8rem;padding:4.5rem;max-width:50rem;width:100%;box-shadow:0 24px 80px rgba(214,40,40,0.13);border:1.5px solid var(--line);position:relative;z-index:2;animation:popUp 0.5s var(--ease) both;}
 @keyframes popUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 .form-icon-wrap{width:7rem;height:7rem;border-radius:50%;background:linear-gradient(135deg,var(--r),var(--rd));display:grid;place-items:center;font-size:2.8rem;margin:0 auto 2.4rem;box-shadow:0 8px 24px rgba(214,40,40,0.28);}
 .form-icon-wrap i{color:#fff;}
@@ -102,17 +123,27 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);min-h
 .form-title em{font-style:italic;color:var(--r);}
 .form-sub{font-size:1.4rem;color:var(--ink3);text-align:center;margin-bottom:3.2rem;line-height:1.6;}
 .form-group{position:relative;margin-bottom:1.4rem;}
-.form-group i{position:absolute;left:1.6rem;top:50%;transform:translateY(-50%);color:var(--ink3);font-size:1.35rem;pointer-events:none;transition:color 0.2s;}
-.form-input{width:100%;padding:1.4rem 1.6rem 1.4rem 4.4rem;border:1.5px solid var(--line);border-radius:99px;font-size:1.4rem;font-family:'Outfit',sans-serif;color:var(--ink);background:var(--rp);outline:none;transition:all 0.25s;}
+.form-group .fi{position:absolute;left:1.6rem;top:50%;transform:translateY(-50%);color:var(--ink3);font-size:1.35rem;pointer-events:none;transition:color 0.2s;z-index:2;}
+.form-group:focus-within .fi{color:var(--r);}
+/* eye icon */
+.eye-btn{position:absolute;right:1.8rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink3);font-size:1.4rem;transition:color 0.2s;z-index:2;padding:0;}
+.eye-btn:hover{color:var(--r);}
+.form-input{width:100%;padding:1.4rem 4.4rem 1.4rem 4.4rem;border:1.5px solid var(--line);border-radius:99px;font-size:1.4rem;font-family:'Outfit',sans-serif;color:var(--ink);background:var(--rp);outline:none;transition:all 0.25s;-moz-appearance:textfield;}
+.form-input::-webkit-outer-spin-button,.form-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .form-input:focus{border-color:rgba(214,40,40,0.4);background:var(--white);box-shadow:0 0 0 4px rgba(214,40,40,0.07);}
-.form-group:focus-within i{color:var(--r);}
+/* password hint */
+.pass-hint{font-size:1.15rem;color:var(--ink3);padding:0.6rem 1.6rem 0;line-height:1.55;display:flex;align-items:flex-start;gap:0.5rem;}
+.pass-hint i{color:var(--r);font-size:1.1rem;margin-top:0.2rem;flex-shrink:0;}
+/* strength bar */
+.strength-wrap{padding:0.5rem 1.6rem 0;}
+.strength-bar{height:4px;border-radius:99px;background:#f0e0e0;overflow:hidden;margin-bottom:0.4rem;}
+.strength-fill{height:100%;border-radius:99px;width:0%;transition:width 0.3s,background 0.3s;}
+.strength-label{font-size:1.1rem;color:var(--ink3);}
 .form-link-row{font-size:1.3rem;color:var(--ink3);text-align:center;margin:1.2rem 0 2.4rem;}
 .form-link-row a{color:var(--r);font-weight:700;text-decoration:none;}
 .form-link-row a:hover{text-decoration:underline;}
 .btn-submit{width:100%;padding:1.5rem;background:linear-gradient(135deg,var(--r),var(--rd));color:#fff;border:none;border-radius:99px;font-size:1.5rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 8px 24px rgba(214,40,40,0.28);transition:all 0.25s;display:flex;align-items:center;justify-content:center;gap:1rem;}
 .btn-submit:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(214,40,40,0.38);}
-
-/* FOOTER — same as login */
 .footer{background:linear-gradient(135deg,#fff0f0,#fde0e0);border-top:1px solid var(--line);padding:5rem 6% 3rem;}
 .foot-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4rem;padding-bottom:3.5rem;border-bottom:1px solid var(--line);}
 .foot-logo{font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:700;color:var(--ink);margin-bottom:1rem;display:block;}
@@ -136,7 +167,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);min-h
 .foot-links{display:flex;gap:2rem;}
 .foot-links a{font-size:1.2rem;color:var(--ink3);text-decoration:none;transition:color 0.2s;}
 .foot-links a:hover{color:var(--r);}
-
 @media(max-width:1100px){.foot-top{grid-template-columns:1fr 1fr;gap:3rem;}}
 @media(max-width:768px){
   .nav-links,.nav-btns{display:none;}
@@ -147,8 +177,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);min-h
 </style>
 </head>
 <body>
-
-<!-- NAVBAR -->
 <nav class="nav" id="nav">
   <a href="index.php" class="nav-logo">My<span>Estate</span></a>
   <div class="nav-links">
@@ -177,40 +205,47 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);min-h
   </div>
 </div>
 
-<!-- REGISTER FORM -->
 <div class="form-page">
   <div class="form-card">
     <div class="form-icon-wrap"><i class="fas fa-home"></i></div>
     <div class="form-title">Create an <em>Account!</em></div>
     <p class="form-sub">Join MyEstate and find your dream property</p>
-    <form action="" method="post">
+    <form action="" method="post" id="regForm">
       <div class="form-group">
-        <i class="fas fa-user"></i>
-        <input type="text" name="name" required maxlength="50" placeholder="enter your name" class="form-input">
+        <i class="fas fa-user fi"></i>
+        <input type="text" name="name" required maxlength="50" placeholder="Enter your full name" class="form-input">
       </div>
       <div class="form-group">
-        <i class="fas fa-envelope"></i>
-        <input type="email" name="email" required maxlength="50" placeholder="enter your email" class="form-input">
+        <i class="fas fa-envelope fi"></i>
+        <input type="email" name="email" required maxlength="100" placeholder="Enter your email address" class="form-input">
       </div>
       <div class="form-group">
-        <i class="fas fa-phone"></i>
-        <input type="number" name="number" required min="0" max="9999999999" placeholder="enter your number" class="form-input">
+        <i class="fas fa-phone fi"></i>
+        <input type="tel" name="number" required maxlength="10" placeholder="Enter your 10-digit number" class="form-input" pattern="[0-9]{10}">
       </div>
+      <!-- Password -->
       <div class="form-group">
-        <i class="fas fa-lock"></i>
-        <input type="password" name="pass" required maxlength="20" placeholder="enter your password" class="form-input">
+        <i class="fas fa-lock fi"></i>
+        <input type="password" name="pass" id="passInput" required placeholder="Create a strong password" class="form-input" oninput="checkStrength(this.value)">
+        <button type="button" class="eye-btn" onclick="toggleEye('passInput','eyePass')"><i class="fas fa-eye" id="eyePass"></i></button>
       </div>
-      <div class="form-group">
-        <i class="fas fa-lock"></i>
-        <input type="password" name="c_pass" required maxlength="20" placeholder="confirm your password" class="form-input">
+      <div class="strength-wrap">
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+        <div class="strength-label" id="strengthLabel"></div>
+      </div>
+      <div class="pass-hint"><i class="fas fa-info-circle"></i> Min. 8 characters with uppercase, lowercase, number & special character (e.g. @, #, !)</div>
+      <!-- Confirm Password -->
+      <div class="form-group" style="margin-top:1.4rem;">
+        <i class="fas fa-lock fi"></i>
+        <input type="password" name="c_pass" id="cPassInput" required placeholder="Confirm your password" class="form-input">
+        <button type="button" class="eye-btn" onclick="toggleEye('cPassInput','eyeCPass')"><i class="fas fa-eye" id="eyeCPass"></i></button>
       </div>
       <p class="form-link-row">already have an account? <a href="login.php">login now</a></p>
-      <button type="submit" name="submit" class="btn-submit"><i class="fas fa-user-plus"></i> Register Now</button>
+      <button type="submit" name="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> Send OTP & Register</button>
     </form>
   </div>
 </div>
 
-<!-- FOOTER -->
 <footer class="footer">
   <div class="foot-top">
     <div class="foot-brand">
@@ -253,5 +288,40 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);min-h
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
 <script src="js/script.js"></script>
 <?php include 'components/message.php'; ?>
+<script>
+function toggleEye(inputId, iconId){
+  const inp = document.getElementById(inputId);
+  const ico = document.getElementById(iconId);
+  if(inp.type === 'password'){
+    inp.type = 'text';
+    ico.classList.replace('fa-eye','fa-eye-slash');
+  } else {
+    inp.type = 'password';
+    ico.classList.replace('fa-eye-slash','fa-eye');
+  }
+}
+function checkStrength(val){
+  const fill  = document.getElementById('strengthFill');
+  const label = document.getElementById('strengthLabel');
+  let score = 0;
+  if(val.length >= 8) score++;
+  if(/[A-Z]/.test(val)) score++;
+  if(/[a-z]/.test(val)) score++;
+  if(/[0-9]/.test(val)) score++;
+  if(/[\W_]/.test(val)) score++;
+  const map = [
+    {w:'0%',  bg:'transparent', txt:''},
+    {w:'20%', bg:'#e74c3c',     txt:'Very Weak'},
+    {w:'40%', bg:'#e67e22',     txt:'Weak'},
+    {w:'60%', bg:'#f1c40f',     txt:'Fair'},
+    {w:'80%', bg:'#2ecc71',     txt:'Strong'},
+    {w:'100%',bg:'#27ae60',     txt:'Very Strong'},
+  ];
+  fill.style.width      = map[score].w;
+  fill.style.background = map[score].bg;
+  label.textContent     = map[score].txt;
+  label.style.color     = map[score].bg;
+}
+</script>
 </body>
 </html>
