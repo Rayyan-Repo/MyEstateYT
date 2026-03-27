@@ -221,10 +221,10 @@ a{text-decoration:none;}
       <span style="font-size:1.3rem;font-weight:700;color:var(--ink);"><?= htmlspecialchars($nav_user_name); ?></span>
       <i class="fas fa-chevron-down" style="font-size:1rem;color:var(--ink3);margin-left:.4rem;"></i>
       <div class="nav-drop-menu">
-        <a href="dashboard.php" class="nd-item"><i class="fas fa-th-large"></i>My Dashboard</a>
-        <a href="my_listings.php" class="nd-item"><i class="fas fa-building"></i>My Listings</a>
         <a href="saved.php" class="nd-item"><i class="fas fa-heart"></i>Saved Properties</a>
         <a href="requests.php" class="nd-item"><i class="fas fa-file-alt"></i>My Requests</a>
+        <div class="nd-sep"></div>
+        <a href="home.php#agentSec" class="nd-item" style="color:var(--r);font-weight:700;"><i class="fas fa-user-tie" style="color:var(--r);"></i>Become an Agent</a>
         <div class="nd-sep"></div>
         <a href="update.php" class="nd-item"><i class="fas fa-user-edit"></i>Edit Profile</a>
         <div class="nd-sep"></div>
@@ -273,8 +273,35 @@ a{text-decoration:none;}
 <section class="listings-sec">
   <div class="listings-grid">
     <?php
-       $select_properties = $conn->prepare("SELECT * FROM `property` ORDER BY date DESC");
-       $select_properties->execute();
+       // Handle search from home page
+       $search_where = [];
+       $search_params = [];
+
+       if(isset($_GET['location']) && !empty($_GET['location'])){
+          $search_where[] = "address LIKE ?";
+          $search_params[] = '%' . $_GET['location'] . '%';
+       }
+       if(isset($_GET['type']) && !empty($_GET['type'])){
+          $search_where[] = "type LIKE ?";
+          $search_params[] = '%' . $_GET['type'] . '%';
+       }
+       if(isset($_GET['budget']) && !empty($_GET['budget'])){
+          $budget_parts = explode('-', $_GET['budget']);
+          if(count($budget_parts) == 2){
+             $search_where[] = "price BETWEEN ? AND ?";
+             $search_params[] = $budget_parts[0];
+             $search_params[] = $budget_parts[1];
+          }
+       }
+
+       if(!empty($search_where)){
+          $sql = "SELECT * FROM `property` WHERE " . implode(' AND ', $search_where) . " ORDER BY date DESC";
+          $select_properties = $conn->prepare($sql);
+          $select_properties->execute($search_params);
+       }else{
+          $select_properties = $conn->prepare("SELECT * FROM `property` ORDER BY date DESC");
+          $select_properties->execute();
+       }
        if($select_properties->rowCount() > 0){
           $card_delay = 0;
           while($fetch_property = $select_properties->fetch(PDO::FETCH_ASSOC)){

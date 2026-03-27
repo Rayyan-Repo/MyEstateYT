@@ -278,10 +278,12 @@ html{font-size:62.5%;}
   </div>
   <div class="tb-r">
     <div class="tb-dpill"><i class="fas fa-calendar-alt"></i> <?= date('D, j M Y'); ?></div>
+    <form action="listings.php" method="GET" style="display:flex;align-items:center;">
     <div class="tb-srch">
       <i class="fas fa-search"></i>
-      <input placeholder="Search anything...">
+      <input name="q" placeholder="Search properties, users..." value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : ''; ?>">
     </div>
+    </form>
     <a href="admins.php" class="tb-ic"><i class="fas fa-user-shield"></i></a>
     <a href="messages.php" class="tb-ic"><i class="fas fa-bell"></i><?php if($total_messages > 0): ?><div class="pip"></div><?php endif; ?></a>
     <a href="update.php" class="tb-ic"><i class="fas fa-cog"></i></a>

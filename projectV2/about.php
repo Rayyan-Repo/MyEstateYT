@@ -214,6 +214,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
     <a href="home.php#footer">Contact</a>
   </div>
   <div class="nav-btns">
+    <a href="saved.php" class="nb o"><i class="fas fa-heart"></i></a>
     <span class="nb o" style="pointer-events:none;"><i class="fas fa-user"></i> <?= $userName ?></span>
     <a href="components/user_logout.php" class="nb s"><i class="fas fa-sign-out-alt"></i> Logout</a>
   </div>
@@ -268,6 +269,12 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
     <div class="tl-item reveal" style="transition-delay:.24s"><div class="tl-dot"></div><div class="tl-year">2024 — Platform 2.0</div><div class="tl-title">Rebuilding From Scratch</div><p class="tl-desc">We completely redesigned the platform with a new focus on mobile experience, faster search filters, and a clean dashboard for both buyers and property owners. Post-sale support — including interior design consultation and tenant management — was introduced as a free service for all registered users.</p></div>
     <div class="tl-item reveal" style="transition-delay:.32s"><div class="tl-dot"></div><div class="tl-year">2025–2026 — Today</div><div class="tl-title">Growing Every Day</div><p class="tl-desc">With 8+ active listings, 20+ registered buyers, and upcoming projects launching across Bandra, Worli, and Kothrud, MyEstate is on a mission to become the most trusted real estate platform in Maharashtra. The journey has just begun.</p></div>
   </div>
+  <!-- Journey Images -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2rem;margin-top:5rem;">
+    <div style="border-radius:2rem;overflow:hidden;height:28rem;" class="reveal"><img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=85&auto=format" alt="Modern apartment interior" style="width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"></div>
+    <div style="border-radius:2rem;overflow:hidden;height:28rem;" class="reveal" style="transition-delay:.1s"><img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=85&auto=format" alt="Luxury living room" style="width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"></div>
+    <div style="border-radius:2rem;overflow:hidden;height:28rem;" class="reveal" style="transition-delay:.2s"><img src="https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&q=85&auto=format" alt="Beautiful home exterior" style="width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"></div>
+  </div>
 </section>
 
 <section class="ab-sec alt">
@@ -285,6 +292,16 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
     <div class="ach-stat as5 reveal" style="transition-delay:.21s"><div class="ach-stat-icon"><i class="fas fa-rupee-sign"></i></div><div><div class="ach-stat-n">₹0</div><div class="ach-stat-l">Hidden Fees — Ever</div></div></div>
     <div class="ach-stat as6 reveal" style="transition-delay:.25s"><div class="ach-stat-icon"><i class="fas fa-handshake"></i></div><div><div class="ach-stat-n">100%</div><div class="ach-stat-l">Direct Owner Contact</div></div></div>
     <div class="ach-stat as7 reveal" style="transition-delay:.29s"><div class="ach-stat-icon"><i class="fas fa-shield-alt"></i></div><div><div class="ach-stat-n">0</div><div class="ach-stat-l">Fraud Cases</div></div></div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="ab-sec" style="padding:0;">
+  <div style="display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:22rem 22rem;gap:1.5rem;padding:0 7%;">
+    <div style="grid-row:1/3;border-radius:2.4rem;overflow:hidden;position:relative;" class="reveal"><img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=88&auto=format" alt="Luxury villa" style="width:100%;height:100%;object-fit:cover;"><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.4),transparent);"></div><div style="position:absolute;bottom:2rem;left:2.5rem;color:#fff;font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:700;">Premium Villas</div></div>
+    <div style="border-radius:2.4rem;overflow:hidden;position:relative;" class="reveal" style="transition-delay:.08s"><img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=700&q=85&auto=format" alt="Modern apartment" style="width:100%;height:100%;object-fit:cover;"><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.35),transparent);"></div><div style="position:absolute;bottom:1.5rem;left:2rem;color:#fff;font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;">City Apartments</div></div>
+    <div style="border-radius:2.4rem;overflow:hidden;position:relative;" class="reveal" style="transition-delay:.14s"><img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=700&q=85&auto=format" alt="Mumbai skyline" style="width:100%;height:100%;object-fit:cover;"><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.35),transparent);"></div><div style="position:absolute;bottom:1.5rem;left:2rem;color:#fff;font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;">Mumbai Skyline</div></div>
+    <div style="border-radius:2.4rem;overflow:hidden;position:relative;" class="reveal" style="transition-delay:.2s"><img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=700&q=85&auto=format" alt="Luxury home" style="width:100%;height:100%;object-fit:cover;"><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.35),transparent);"></div><div style="position:absolute;bottom:1.5rem;left:2rem;color:#fff;font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;">Luxury Homes</div></div>
   </div>
 </section>
 
@@ -310,7 +327,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
   <div class="values-grid">
     <div class="val-card reveal" style="transition-delay:.06s"><div class="val-img"><img src="https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=800&q=80&auto=format" alt="Transparency"><div class="val-img-ov"></div></div><div class="val-body"><div class="val-icon"><i class="fas fa-eye"></i></div><div class="val-title">Radical Transparency</div><p class="val-desc">Every price you see is the actual price. Every photo is taken by our team. Every detail has been verified on-site. No hidden costs, no shock revelations on moving day.</p></div></div>
     <div class="val-card reveal" style="transition-delay:.12s"><div class="val-img"><img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800&q=80&auto=format" alt="People First"><div class="val-img-ov"></div></div><div class="val-body"><div class="val-icon"><i class="fas fa-heart"></i></div><div class="val-title">People Over Profit</div><p class="val-desc">We charge zero commission to buyers. We believe homeownership should not be a transaction — it's a life milestone. Our success is measured by satisfied families, not closed deals.</p></div></div>
-    <div class="val-card reveal" style="transition-delay:.18s"><div class="val-img"><img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&q=80&auto=format" alt="Excellence"><div class="val-img-ov"></div></div><div class="val-body"><div class="val-icon"><i class="fas fa-award"></i></div><div class="val-title">Relentless Excellence</div><p class="val-desc">From the UI you use to the paperwork we process — we obsess over quality at every step. We'd rather list 8 perfect properties than 80 mediocre ones.</p></div></div>
+    <div class="val-card reveal" style="transition-delay:.18s"><div class="val-img"><img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80&auto=format" alt="Excellence"><div class="val-img-ov"></div></div><div class="val-body"><div class="val-icon"><i class="fas fa-award"></i></div><div class="val-title">Relentless Excellence</div><p class="val-desc">From the UI you use to the paperwork we process — we obsess over quality at every step. We'd rather list 8 perfect properties than 80 mediocre ones.</p></div></div>
   </div>
 </section>
 

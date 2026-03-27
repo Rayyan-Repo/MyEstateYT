@@ -48,10 +48,15 @@ $count_com = $conn->prepare("SELECT COUNT(*) FROM `property` WHERE type = 'comme
 $active_filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
 $search_box = '';
 
-if(isset($_POST['search_btn'])){
+// Handle search from dashboard (GET) or search box (POST)
+if(isset($_GET['q']) && !empty($_GET['q'])){
+   $search_box = filter_var($_GET['q'], FILTER_SANITIZE_STRING);
+   $select_listings = $conn->prepare("SELECT * FROM `property` WHERE property_name LIKE ? OR address LIKE ? OR type LIKE ? ORDER BY id DESC");
+   $select_listings->execute(['%'.$search_box.'%', '%'.$search_box.'%', '%'.$search_box.'%']);
+} elseif(isset($_POST['search_btn'])){
    $search_box = filter_var($_POST['search_box'], FILTER_SANITIZE_STRING);
-   $select_listings = $conn->prepare("SELECT * FROM `property` WHERE property_name LIKE '%{$search_box}%' OR address LIKE '%{$search_box}%' ORDER BY id DESC");
-   $select_listings->execute();
+   $select_listings = $conn->prepare("SELECT * FROM `property` WHERE property_name LIKE ? OR address LIKE ? ORDER BY id DESC");
+   $select_listings->execute(['%'.$search_box.'%', '%'.$search_box.'%']);
 } elseif($active_filter != 'all'){
    $select_listings = $conn->prepare("SELECT * FROM `property` WHERE type = ? ORDER BY id DESC");
    $select_listings->execute([$active_filter]);

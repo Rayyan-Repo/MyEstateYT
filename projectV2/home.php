@@ -1,3 +1,35 @@
+<?php
+include 'components/connect.php';
+
+if(isset($_COOKIE['user_id'])){
+   $user_id = $_COOKIE['user_id'];
+}else{
+   header('location:login.php');
+   exit();
+}
+
+// Fetch user data
+$sel_user = $conn->prepare("SELECT * FROM `users` WHERE id = ? LIMIT 1");
+$sel_user->execute([$user_id]);
+$fetch_user = $sel_user->fetch(PDO::FETCH_ASSOC);
+$user_name = $fetch_user ? $fetch_user['name'] : 'User';
+$user_initial = strtoupper(substr($user_name, 0, 1));
+
+// Count saved properties
+$sel_saved = $conn->prepare("SELECT COUNT(*) as cnt FROM `saved` WHERE user_id = ?");
+$sel_saved->execute([$user_id]);
+$saved_count = $sel_saved->fetch(PDO::FETCH_ASSOC)['cnt'];
+
+// Count total listings
+$sel_total = $conn->prepare("SELECT COUNT(*) as cnt FROM `property`");
+$sel_total->execute();
+$total_listings = $sel_total->fetch(PDO::FETCH_ASSOC)['cnt'];
+
+// Count total users
+$sel_users = $conn->prepare("SELECT COUNT(*) as cnt FROM `users`");
+$sel_users->execute();
+$total_users = $sel_users->fetch(PDO::FETCH_ASSOC)['cnt'];
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -555,16 +587,16 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
   <a href="home.php" class="logo">My<span>Estate</span></a>
   <div class="nav-center"><a href="home.php" class="active">Home</a><a href="listings.php">Properties</a><a href="about.php">About</a><a href="#footer">Contact</a></div>
   <div class="nav-right">
-    <a href="saved.php" class="nav-icon"><i class="fas fa-heart"></i><span class="nav-badge">3</span></a>
+    <a href="saved.php" class="nav-icon"><i class="fas fa-heart"></i><?php if($saved_count > 0): ?><span class="nav-badge"><?= $saved_count; ?></span><?php endif; ?></a>
     <div class="nav-user">
-      <div class="nav-av">R</div>
-      <span style="font-size:1.3rem;font-weight:700;color:var(--ink);">Rahul</span>
+      <div class="nav-av"><?= $user_initial; ?></div>
+      <span style="font-size:1.3rem;font-weight:700;color:var(--ink);"><?= htmlspecialchars($user_name); ?></span>
       <i class="fas fa-chevron-down" style="font-size:1rem;color:var(--ink3);margin-left:.4rem;"></i>
       <div class="nav-drop-menu">
-        <a href="dashboard.php" class="nd-item"><i class="fas fa-th-large"></i>My Dashboard</a>
-        <a href="my_listings.php" class="nd-item"><i class="fas fa-building"></i>My Listings</a>
         <a href="saved.php" class="nd-item"><i class="fas fa-heart"></i>Saved Properties</a>
         <a href="requests.php" class="nd-item"><i class="fas fa-file-alt"></i>My Requests</a>
+        <div class="nd-sep"></div>
+        <a href="#agentSec" class="nd-item" style="color:var(--r);font-weight:700;"><i class="fas fa-user-tie" style="color:var(--r);"></i>Become an Agent</a>
         <div class="nd-sep"></div>
         <a href="update.php" class="nd-item"><i class="fas fa-user-edit"></i>Edit Profile</a>
         <div class="nd-sep"></div>
@@ -577,22 +609,24 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 <section class="hero">
   <div class="hero-deco-ring r1"></div><div class="hero-deco-ring r2"></div><div class="hero-deco-ring r3"></div>
   <div class="hero-l">
-    <div class="hero-tag">Welcome back, Rahul</div>
-    <h1 class="hero-h"><span>Good evening,</span><em>Rahul.</em><span style="font-size:.62em;color:var(--ink3);font-weight:400;font-family:'Outfit',sans-serif;font-style:normal;letter-spacing:-.01em;">Find your</span><span>perfect home.</span></h1>
-    <p class="hero-sub">You have <strong style="color:var(--r);">3 saved properties</strong> and 8 verified listings waiting for you across Mumbai & Pune.</p>
+    <div class="hero-tag">Welcome back, <?= htmlspecialchars($user_name); ?></div>
+    <h1 class="hero-h"><span>Good evening,</span><em><?= htmlspecialchars($user_name); ?>.</em><span style="font-size:.62em;color:var(--ink3);font-weight:400;font-family:'Outfit',sans-serif;font-style:normal;letter-spacing:-.01em;">Find your</span><span>perfect home.</span></h1>
+    <p class="hero-sub">You have <strong style="color:var(--r);"><?= $saved_count; ?> saved properties</strong> and <?= $total_listings; ?> verified listings waiting for you across Mumbai & Pune.</p>
     <div class="srch-wrap">
       <div class="srch-label">Search Properties</div>
+      <form action="listings.php" method="GET">
       <div class="srch-row">
-        <div class="sf"><label>Location</label><input type="text" placeholder="City or area..."></div>
-        <div class="sf"><label>Type</label><select><option>Any type</option><option>Apartment</option><option>Villa</option><option>Plot</option><option>Commercial</option></select></div>
-        <div class="sf"><label>Budget</label><select><option>Any budget</option><option>Under ₹30L</option><option>₹30L – ₹1Cr</option><option>Above ₹1Cr</option></select></div>
-        <button class="srch-btn" onclick="window.location='listings.php'"><i class="fas fa-search"></i> Search</button>
+        <div class="sf"><label>Location</label><input type="text" name="location" placeholder="City or area..."></div>
+        <div class="sf"><label>Type</label><select name="type"><option value="">Any type</option><option value="flat">Apartment</option><option value="house">Villa</option><option value="shop">Commercial</option></select></div>
+        <div class="sf"><label>Budget</label><select name="budget"><option value="">Any budget</option><option value="0-3000000">Under ₹30L</option><option value="3000000-10000000">₹30L – ₹1Cr</option><option value="10000000-999999999">Above ₹1Cr</option></select></div>
+        <button type="submit" class="srch-btn"><i class="fas fa-search"></i> Search</button>
       </div>
+      </form>
     </div>
     <div class="hero-pills">
       <button class="hp prim" onclick="openPopup('visitPopup')"><i class="fas fa-calendar-check"></i> Book a Site Visit</button>
       <a href="listings.php" class="hp sec"><i class="fas fa-building"></i> All Properties</a>
-      <a href="saved.php" class="hp sec"><i class="fas fa-heart"></i> Saved (3)</a>
+      <a href="saved.php" class="hp sec"><i class="fas fa-heart"></i> Saved (<?= $saved_count; ?>)</a>
       <a href="#nbhd" class="hp sec"><i class="fas fa-map-marked-alt"></i> Explore Areas</a>
     </div>
     <div class="trust-row">
@@ -604,16 +638,16 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
   <div class="hero-r">
     <img src="https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?w=1400&q=90&auto=format" alt="Property">
     <div class="hero-r-grad"></div>
-    <div class="hf hf1"><div class="hf-ic"><i class="fas fa-home"></i></div><div class="hf-n">8+</div><div class="hf-l">Properties Listed</div></div>
-    <div class="hf hf2"><div class="hf-ic"><i class="fas fa-users"></i></div><div class="hf-n">20+</div><div class="hf-l">Happy Buyers</div></div>
+    <div class="hf hf1"><div class="hf-ic"><i class="fas fa-home"></i></div><div class="hf-n"><?= $total_listings; ?>+</div><div class="hf-l">Properties Listed</div></div>
+    <div class="hf hf2"><div class="hf-ic"><i class="fas fa-users"></i></div><div class="hf-n"><?= $total_users; ?>+</div><div class="hf-l">Happy Buyers</div></div>
     <div class="hf hf3"><div class="hf-ic"><i class="fas fa-star"></i></div><div class="hf-n">4.9★</div><div class="hf-l">Avg Rating</div></div>
   </div>
 </section>
 <!-- STATS -->
 <div class="stats-strip">
   <div class="ss-texture"></div>
-  <div class="si reveal"><div class="si-i"><i class="fas fa-building"></i></div><div class="si-n">8+</div><div class="si-l">Active Listings</div></div>
-  <div class="si reveal" style="transition-delay:.07s"><div class="si-i"><i class="fas fa-users"></i></div><div class="si-n">20+</div><div class="si-l">Registered Buyers</div></div>
+  <div class="si reveal"><div class="si-i"><i class="fas fa-building"></i></div><div class="si-n"><?= $total_listings; ?>+</div><div class="si-l">Active Listings</div></div>
+  <div class="si reveal" style="transition-delay:.07s"><div class="si-i"><i class="fas fa-users"></i></div><div class="si-n"><?= $total_users; ?>+</div><div class="si-l">Registered Buyers</div></div>
   <div class="si reveal" style="transition-delay:.14s"><div class="si-i"><i class="fas fa-city"></i></div><div class="si-n">2</div><div class="si-l">Cities Covered</div></div>
   <div class="si reveal" style="transition-delay:.21s"><div class="si-i"><i class="fas fa-star"></i></div><div class="si-n">4.9★</div><div class="si-l">Average Rating</div></div>
 </div>
@@ -729,7 +763,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
   </div>
 </section>
 <!-- BECOME AN AGENT -->
-<section class="agent-sec">
+<section class="agent-sec" id="agentSec">
   <div class="agent-sec-bg">
     <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
       <polygon points="720,40 820,200 720,360 620,200" fill="none" stroke="#d62828" stroke-width="1"/>
