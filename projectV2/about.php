@@ -50,6 +50,23 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 .nb.o:hover{background:var(--rp);}
 .nb.s{background:linear-gradient(135deg,var(--r),var(--rd));color:#fff;box-shadow:0 4px 18px rgba(214,40,40,.32);}
 .nb.s:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(214,40,40,.42);}
+.nav-right{display:flex;align-items:center;gap:1.4rem;}
+.nav-icon{width:4.2rem;height:4.2rem;border-radius:50%;border:1.5px solid var(--line);background:var(--white);display:grid;place-items:center;font-size:1.5rem;color:var(--ink3);text-decoration:none;transition:all .22s;position:relative;}
+.nav-icon:hover{border-color:var(--r);color:var(--r);background:var(--rp);}
+.nav-badge{position:absolute;top:-.3rem;right:-.3rem;width:1.6rem;height:1.6rem;border-radius:50%;background:var(--r);color:#fff;font-size:.75rem;font-weight:800;display:grid;place-items:center;border:2px solid var(--bg);}
+.nav-user{display:flex;align-items:center;gap:1rem;padding:.7rem 1.6rem .7rem .7rem;border:1.5px solid var(--line);border-radius:99px;background:var(--white);cursor:pointer;transition:all .22s;position:relative;}
+.nav-user:hover{border-color:var(--r);background:var(--rp);}
+.nav-av{width:3.4rem;height:3.4rem;border-radius:50%;background:linear-gradient(135deg,var(--r),var(--rd));display:grid;place-items:center;font-size:1.4rem;font-weight:800;color:#fff;flex-shrink:0;}
+.nav-drop-menu{display:none;position:absolute;top:calc(100% + 1rem);right:0;background:var(--white);border-radius:1.6rem;border:1.5px solid var(--line);box-shadow:0 20px 60px rgba(214,40,40,.15);padding:.8rem;min-width:20rem;z-index:100;}
+.nav-drop-menu.open{display:block;}
+.nd-item{display:flex;align-items:center;gap:1rem;padding:1.1rem 1.4rem;border-radius:1rem;font-size:1.3rem;color:var(--ink2);text-decoration:none;transition:all .18s;}
+.nd-item i{width:2rem;text-align:center;color:var(--ink3);font-size:1.2rem;}
+.nd-item:hover{background:var(--rp);color:var(--r);}
+.nd-item:hover i{color:var(--r);}
+.nd-sep{height:1px;background:var(--line);margin:.5rem 0;}
+.nd-danger{color:#c0392b!important;}
+.nd-danger i{color:#c0392b!important;}
+.nd-danger:hover{background:#fff5f5!important;}
 .reveal{opacity:0;transform:translateY(28px);transition:opacity .75s var(--ease),transform .75s var(--ease);}
 .reveal.in{opacity:1;transform:translateY(0);}
 .eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.95rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--r);background:var(--rp);padding:.35rem 1rem;border-radius:99px;border:1px solid rgba(214,40,40,.12);width:fit-content;margin-bottom:1.4rem;}
@@ -191,7 +208,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
   .foot-grid{grid-template-columns:1fr 1fr;gap:3rem;}
 }
 @media(max-width:768px){
-  .nav-links,.nav-btns{display:none;}
+  .nav-links,.nav-btns,.nav-right{display:none;}
   .ab-hero-h{font-size:5.5rem;}
   .ab-sec{padding:6rem 5%;}
   .values-grid{grid-template-columns:1fr;}
@@ -208,15 +225,29 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 <nav class="nav" id="mainNav">
   <a href="home.php" class="logo">My<span>Estate</span></a>
   <div class="nav-links">
+    <a href="home.php">Home</a>
     <a href="listings.php">Properties</a>
-    <a href="home.php">Upcoming</a>
+    <a href="home.php#upSec">Upcoming</a>
     <a href="about.php" class="active">About</a>
-    <a href="home.php#footer">Contact</a>
+    <a href="contact.php">Contact</a>
   </div>
-  <div class="nav-btns">
-    <a href="saved.php" class="nb o"><i class="fas fa-heart"></i></a>
-    <span class="nb o" style="pointer-events:none;"><i class="fas fa-user"></i> <?= $userName ?></span>
-    <a href="components/user_logout.php" class="nb s"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  <div class="nav-right">
+    <a href="saved.php" class="nav-icon"><i class="fas fa-heart"></i></a>
+    <div class="nav-user" id="navUser">
+      <div class="nav-av"><?= strtoupper(substr($userName, 0, 1)); ?></div>
+      <span style="font-size:1.3rem;font-weight:700;color:var(--ink);"><?= $userName ?></span>
+      <i class="fas fa-chevron-down" style="font-size:1rem;color:var(--ink3);margin-left:.4rem;"></i>
+      <div class="nav-drop-menu">
+        <a href="saved.php" class="nd-item"><i class="fas fa-heart"></i>Saved Properties</a>
+        <a href="requests.php" class="nd-item"><i class="fas fa-file-alt"></i>My Requests</a>
+        <div class="nd-sep"></div>
+        <a href="home.php#agentSec" class="nd-item" style="color:var(--r);font-weight:700;"><i class="fas fa-user-tie" style="color:var(--r);"></i>Become an Agent</a>
+        <div class="nd-sep"></div>
+        <a href="update.php" class="nd-item"><i class="fas fa-user-edit"></i>Edit Profile</a>
+        <div class="nd-sep"></div>
+        <a href="components/user_logout.php" class="nd-item nd-danger"><i class="fas fa-sign-out-alt"></i>Logout</a>
+      </div>
+    </div>
   </div>
 </nav>
 
@@ -345,6 +376,19 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 const obs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');obs.unobserve(x.target);}}),{threshold:.06});
 document.querySelectorAll('.reveal').forEach(r=>obs.observe(r));
 window.addEventListener('scroll',()=>document.getElementById('mainNav').classList.toggle('scrolled',scrollY>40));
+// Profile dropdown toggle
+const navUser=document.getElementById('navUser');
+if(navUser){
+  navUser.addEventListener('click',function(e){
+    e.stopPropagation();
+    const menu=this.querySelector('.nav-drop-menu');
+    menu.classList.toggle('open');
+  });
+  document.addEventListener('click',function(e){
+    const menu=navUser.querySelector('.nav-drop-menu');
+    if(!navUser.contains(e.target))menu.classList.remove('open');
+  });
+}
 </script>
 </body>
 </html>

@@ -1,5 +1,8 @@
 <?php
 session_start();
+if(isset($_GET['redirect'])){
+   $_SESSION['redirect_after_login'] = $_GET['redirect'];
+}
 include 'components/connect.php';
 
 if(isset($_COOKIE['user_id'])){
@@ -20,7 +23,23 @@ if(isset($_POST['submit'])){
 
       if($sel->rowCount() > 0){
          setcookie('user_id', $row['id'], time() + 60*60*24*30, '/');
-         header('location:home.php');
+         if(isset($_SESSION['redirect_after_login'])){
+            $redirect = $_SESSION['redirect_after_login'];
+            unset($_SESSION['redirect_after_login']);
+            if($redirect === 'listings' || $redirect === 'properties'){
+               header('location:listings.php');
+            } elseif($redirect === 'upcoming'){
+               header('location:home.php#upSec');
+            } elseif($redirect === 'about'){
+               header('location:about.php');
+            } elseif($redirect === 'contact'){
+               header('location:contact.php');
+            } else {
+               header('location:home.php');
+            }
+         } else {
+            header('location:home.php');
+         }
          exit();
       } else {
          $warning_msg[] = 'Incorrect email or password!';

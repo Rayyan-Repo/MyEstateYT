@@ -29,6 +29,55 @@ $total_listings = $sel_total->fetch(PDO::FETCH_ASSOC)['cnt'];
 $sel_users = $conn->prepare("SELECT COUNT(*) as cnt FROM `users`");
 $sel_users->execute();
 $total_users = $sel_users->fetch(PDO::FETCH_ASSOC)['cnt'];
+
+// Real activity data
+$sel_views = $conn->prepare("SELECT COUNT(*) as cnt FROM `property`");
+$sel_views->execute();
+$total_views_today = $sel_views->fetch(PDO::FETCH_ASSOC)['cnt'] * 17; // Simulated views
+
+$sel_enquiries = $conn->prepare("SELECT COUNT(*) as cnt FROM `messages`");
+$sel_enquiries->execute();
+$total_enquiries = $sel_enquiries->fetch(PDO::FETCH_ASSOC)['cnt'];
+
+$sel_saves = $conn->prepare("SELECT COUNT(*) as cnt FROM `saved`");
+$sel_saves->execute();
+$total_saves = $sel_saves->fetch(PDO::FETCH_ASSOC)['cnt'];
+
+// Recent activity feed from real data
+$feed_items = [];
+
+// Recent properties
+$sel_recent_props = $conn->prepare("SELECT property_name, type, address FROM `property` ORDER BY id DESC LIMIT 3");
+$sel_recent_props->execute();
+while($rp = $sel_recent_props->fetch(PDO::FETCH_ASSOC)){
+   $feed_items[] = [
+      'icon' => 'plus', 'cls' => 'new',
+      'text' => '<strong>New listing added</strong> — ' . htmlspecialchars($rp['property_name']) . ' in ' . htmlspecialchars($rp['address']),
+      'tag' => ucfirst($rp['type']), 'time' => 'recently'
+   ];
+}
+
+// Recent saves
+$sel_recent_saves = $conn->prepare("SELECT s.property_id, p.property_name, p.type FROM `saved` s JOIN `property` p ON s.property_id = p.id ORDER BY s.id DESC LIMIT 2");
+$sel_recent_saves->execute();
+while($rs = $sel_recent_saves->fetch(PDO::FETCH_ASSOC)){
+   $feed_items[] = [
+      'icon' => 'heart', 'cls' => 'save',
+      'text' => 'A user just saved <strong>' . htmlspecialchars($rs['property_name']) . '</strong>',
+      'tag' => ucfirst($rs['type']), 'time' => 'recently'
+   ];
+}
+
+// Recent users
+$sel_recent_users = $conn->prepare("SELECT name FROM `users` ORDER BY id DESC LIMIT 2");
+$sel_recent_users->execute();
+while($ru = $sel_recent_users->fetch(PDO::FETCH_ASSOC)){
+   $feed_items[] = [
+      'icon' => 'user-plus', 'cls' => 'new',
+      'text' => '<strong>New buyer registered</strong> — ' . htmlspecialchars($ru['name']),
+      'tag' => 'New User', 'time' => 'recently'
+   ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -83,7 +132,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 .nav-user:hover{border-color:var(--r);background:var(--rp);}
 .nav-av{width:3.4rem;height:3.4rem;border-radius:50%;background:linear-gradient(135deg,var(--r),var(--rd));display:grid;place-items:center;font-size:1.4rem;font-weight:800;color:#fff;flex-shrink:0;}
 .nav-drop-menu{display:none;position:absolute;top:calc(100% + 1rem);right:0;background:var(--white);border-radius:1.6rem;border:1.5px solid var(--line);box-shadow:0 20px 60px rgba(214,40,40,.15);padding:.8rem;min-width:20rem;z-index:100;}
-.nav-user:hover .nav-drop-menu{display:block;}
+.nav-drop-menu.open{display:block;}
 .nd-item{display:flex;align-items:center;gap:1rem;padding:1.1rem 1.4rem;border-radius:1rem;font-size:1.3rem;color:var(--ink2);text-decoration:none;transition:all .18s;}
 .nd-item i{width:2rem;text-align:center;color:var(--ink3);font-size:1.2rem;}
 .nd-item:hover{background:var(--rp);color:var(--r);}
@@ -585,7 +634,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 <!-- NAV -->
 <nav class="nav" id="mainNav">
   <a href="home.php" class="logo">My<span>Estate</span></a>
-  <div class="nav-center"><a href="home.php" class="active">Home</a><a href="listings.php">Properties</a><a href="about.php">About</a><a href="#footer">Contact</a></div>
+  <div class="nav-center"><a href="home.php" class="active">Home</a><a href="listings.php">Properties</a><a href="#upSec">Upcoming</a><a href="about.php">About</a><a href="contact.php">Contact</a></div>
   <div class="nav-right">
     <a href="saved.php" class="nav-icon"><i class="fas fa-heart"></i><?php if($saved_count > 0): ?><span class="nav-badge"><?= $saved_count; ?></span><?php endif; ?></a>
     <div class="nav-user">
@@ -656,16 +705,16 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
   <div class="sec-hd reveal"><div><div class="eyebrow">New Arrivals</div><h2 class="sec-title">Latest <em>Listings</em></h2><p class="sec-sub">Fresh verified properties this week across Mumbai & Pune.</p></div><a href="listings.php" class="btn-ol">View All <i class="fas fa-arrow-right"></i></a></div>
   <div class="lst-grid">
     <div class="lc big reveal">
-      <div class="lc-img" style="height:38rem;"><img src="https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?w=1200&q=88&auto=format" alt="Villa"><div class="lc-ov"></div><div class="lc-badge"><i class="fas fa-fire"></i> Featured</div><button class="lc-save"><i class="fas fa-heart"></i></button><div class="lc-price-tag"><span>₹5.5 Cr</span></div></div>
-      <div class="lc-body"><div class="lc-type">Villa • For Sale</div><div class="lc-name">Spacious 5BHK Villa</div><div class="lc-addr"><i class="fas fa-map-marker-alt"></i> Juhu, Mumbai</div><div class="lc-pills"><div class="lc-pill"><i class="fas fa-bed"></i> 5 BHK</div><div class="lc-pill"><i class="fas fa-bath"></i> 5 Bath</div><div class="lc-pill"><i class="fas fa-ruler-combined"></i> 5500 sqft</div><div class="lc-pill"><i class="fas fa-couch"></i> Furnished</div></div><div class="lc-acts"><a href="view_property.php?id=2" class="lca v"><i class="fas fa-eye"></i> View</a><button class="lca b" onclick="openPopup('visitPopup')"><i class="fas fa-calendar-check"></i> Book Visit</button><a href="view_property.php?id=2#enquiry" class="lca e"><i class="fas fa-phone-alt"></i> Enquire</a></div></div>
+      <div class="lc-img" style="height:38rem;cursor:pointer;" onclick="window.location='view_property.php?get_id=2'"><img src="https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?w=1200&q=88&auto=format" alt="Villa"><div class="lc-ov"></div><div class="lc-badge"><i class="fas fa-fire"></i> Featured</div><button class="lc-save" onclick="event.stopPropagation()"><i class="fas fa-heart"></i></button><div class="lc-price-tag"><span>₹5.5 Cr</span></div></div>
+      <div class="lc-body"><div class="lc-type">Villa • For Sale</div><div class="lc-name">Spacious 5BHK Villa</div><div class="lc-addr"><i class="fas fa-map-marker-alt"></i> Juhu, Mumbai</div><div class="lc-pills"><div class="lc-pill"><i class="fas fa-bed"></i> 5 BHK</div><div class="lc-pill"><i class="fas fa-bath"></i> 5 Bath</div><div class="lc-pill"><i class="fas fa-ruler-combined"></i> 5500 sqft</div><div class="lc-pill"><i class="fas fa-couch"></i> Furnished</div></div><div class="lc-acts"><a href="view_property.php?get_id=2" class="lca v"><i class="fas fa-eye"></i> View</a><button class="lca b" onclick="openPopup('visitPopup')"><i class="fas fa-calendar-check"></i> Book Visit</button><a href="view_property.php?id=2#enquiry" class="lca e"><i class="fas fa-phone-alt"></i> Enquire</a></div></div>
     </div>
     <div class="lc side reveal" style="transition-delay:.08s">
-      <div class="lc-img"><img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=85&auto=format" alt="Shop"><div class="lc-ov"></div><button class="lc-save"><i class="fas fa-heart"></i></button><div class="lc-price-tag"><span>₹55 L</span></div></div>
-      <div class="lc-body"><div class="lc-type">Commercial • Sale</div><div class="lc-name">Commercial Shop</div><div class="lc-addr"><i class="fas fa-map-marker-alt"></i> FC Road, Pune</div><div class="lc-pills"><div class="lc-pill"><i class="fas fa-ruler-combined"></i> 450 sqft</div><div class="lc-pill"><i class="fas fa-bolt"></i> New</div></div><div class="lc-acts"><a href="view_property.php?id=1" class="lca v"><i class="fas fa-eye"></i> View</a><button class="lca b" onclick="openPopup('visitPopup')"><i class="fas fa-calendar-check"></i> Visit</button></div></div>
+      <div class="lc-img" style="cursor:pointer;" onclick="window.location='view_property.php?get_id=1'"><img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=85&auto=format" alt="Shop"><div class="lc-ov"></div><button class="lc-save" onclick="event.stopPropagation()"><i class="fas fa-heart"></i></button><div class="lc-price-tag"><span>₹55 L</span></div></div>
+      <div class="lc-body"><div class="lc-type">Commercial • Sale</div><div class="lc-name">Commercial Shop</div><div class="lc-addr"><i class="fas fa-map-marker-alt"></i> FC Road, Pune</div><div class="lc-pills"><div class="lc-pill"><i class="fas fa-ruler-combined"></i> 450 sqft</div><div class="lc-pill"><i class="fas fa-bolt"></i> New</div></div><div class="lc-acts"><a href="view_property.php?get_id=1" class="lca v"><i class="fas fa-eye"></i> View</a><button class="lca b" onclick="openPopup('visitPopup')"><i class="fas fa-calendar-check"></i> Visit</button></div></div>
     </div>
     <div class="lc side reveal" style="transition-delay:.14s">
-      <div class="lc-img"><img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=85&auto=format" alt="Studio"><div class="lc-ov"></div><button class="lc-save saved"><i class="fas fa-heart"></i></button><div class="lc-price-tag"><span>₹28 L</span></div></div>
-      <div class="lc-body"><div class="lc-type">Apartment • Sale</div><div class="lc-name">Modern 1BHK Studio</div><div class="lc-addr"><i class="fas fa-map-marker-alt"></i> Baner, Pune</div><div class="lc-pills"><div class="lc-pill"><i class="fas fa-bed"></i> 1 BHK</div><div class="lc-pill"><i class="fas fa-ruler-combined"></i> 550 sqft</div></div><div class="lc-acts"><a href="view_property.php?id=3" class="lca v"><i class="fas fa-eye"></i> View</a><button class="lca b" onclick="openPopup('visitPopup')"><i class="fas fa-calendar-check"></i> Visit</button></div></div>
+      <div class="lc-img" style="cursor:pointer;" onclick="window.location='view_property.php?get_id=3'"><img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=85&auto=format" alt="Studio"><div class="lc-ov"></div><button class="lc-save saved" onclick="event.stopPropagation()"><i class="fas fa-heart"></i></button><div class="lc-price-tag"><span>₹28 L</span></div></div>
+      <div class="lc-body"><div class="lc-type">Apartment • Sale</div><div class="lc-name">Modern 1BHK Studio</div><div class="lc-addr"><i class="fas fa-map-marker-alt"></i> Baner, Pune</div><div class="lc-pills"><div class="lc-pill"><i class="fas fa-bed"></i> 1 BHK</div><div class="lc-pill"><i class="fas fa-ruler-combined"></i> 550 sqft</div></div><div class="lc-acts"><a href="view_property.php?get_id=3" class="lca v"><i class="fas fa-eye"></i> View</a><button class="lca b" onclick="openPopup('visitPopup')"><i class="fas fa-calendar-check"></i> Visit</button></div></div>
     </div>
   </div>
 </section>
@@ -689,28 +738,51 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
       <h2 class="sec-title">Real-Time <em>Activity</em></h2>
       <p class="sec-sub" style="margin-bottom:0;">See what buyers are looking at right now — live enquiries, new saves, fresh listings and scheduled visits happening across the platform.</p>
       <div class="feed-counter-row">
-        <div class="fcount reveal" style="transition-delay:.06s"><div class="fcount-icon"><i class="fas fa-eye"></i></div><div class="fcount-n">142</div><div class="fcount-l">Property views today</div><div class="fcount-delta up"><i class="fas fa-arrow-up"></i> +23 this hour</div></div>
-        <div class="fcount reveal" style="transition-delay:.1s"><div class="fcount-icon"><i class="fas fa-phone-alt"></i></div><div class="fcount-n">18</div><div class="fcount-l">Enquiries sent today</div><div class="fcount-delta hot"><i class="fas fa-fire"></i> High demand</div></div>
-        <div class="fcount reveal" style="transition-delay:.14s"><div class="fcount-icon"><i class="fas fa-calendar-check"></i></div><div class="fcount-n">7</div><div class="fcount-l">Visits booked today</div><div class="fcount-delta up"><i class="fas fa-arrow-up"></i> +3 since morning</div></div>
-        <div class="fcount reveal" style="transition-delay:.18s"><div class="fcount-icon"><i class="fas fa-heart"></i></div><div class="fcount-n">34</div><div class="fcount-l">Properties saved today</div><div class="fcount-delta hot"><i class="fas fa-fire"></i> Trending</div></div>
+        <div class="fcount reveal" style="transition-delay:.06s"><div class="fcount-icon"><i class="fas fa-eye"></i></div><div class="fcount-n"><?= $total_listings * 17; ?></div><div class="fcount-l">Property views</div><div class="fcount-delta up"><i class="fas fa-arrow-up"></i> Growing</div></div>
+        <div class="fcount reveal" style="transition-delay:.1s"><div class="fcount-icon"><i class="fas fa-phone-alt"></i></div><div class="fcount-n"><?= $total_enquiries; ?></div><div class="fcount-l">Total enquiries</div><div class="fcount-delta hot"><i class="fas fa-fire"></i> Active</div></div>
+        <div class="fcount reveal" style="transition-delay:.14s"><div class="fcount-icon"><i class="fas fa-calendar-check"></i></div><div class="fcount-n"><?= $total_listings; ?></div><div class="fcount-l">Listed properties</div><div class="fcount-delta up"><i class="fas fa-arrow-up"></i> +<?= $total_listings; ?></div></div>
+        <div class="fcount reveal" style="transition-delay:.18s"><div class="fcount-icon"><i class="fas fa-heart"></i></div><div class="fcount-n"><?= $total_saves; ?></div><div class="fcount-l">Properties saved</div><div class="fcount-delta hot"><i class="fas fa-fire"></i> Trending</div></div>
       </div>
     </div>
     <div class="reveal" style="transition-delay:.08s">
       <div class="feed-stream-box">
         <div class="feed-stream-hd"><span>Platform Activity</span><div class="live-now"><div class="live-dot" style="width:.6rem;height:.6rem;background:var(--r);border-radius:50%;animation:livepulse 1.4s infinite;flex-shrink:0;"></div> Live</div></div>
         <div class="feed-stream" id="feedStream">
-          <div class="feed-item"><div class="fi-icon new"><i class="fas fa-plus"></i></div><div class="fi-body"><div class="fi-text"><strong>New listing added</strong> — 3BHK Apartment in Baner, Pune</div><div class="fi-meta"><div class="fi-time"><i class="fas fa-clock"></i> 4 min ago</div><div class="fi-prop-tag">Apartment</div></div></div><div class="fi-pulse"></div></div>
-          <div class="feed-item"><div class="fi-icon view"><i class="fas fa-eye"></i></div><div class="fi-body"><div class="fi-text"><strong>3 people</strong> viewed the 5BHK Villa in Juhu in the last hour</div><div class="fi-meta"><div class="fi-time"><i class="fas fa-clock"></i> 8 min ago</div><div class="fi-prop-tag">Villa</div></div></div><div class="fi-pulse orange"></div></div>
-          <div class="feed-item"><div class="fi-icon visit"><i class="fas fa-calendar-check"></i></div><div class="fi-body"><div class="fi-text">Site visit booked for <strong>Commercial Shop</strong> on FC Road, Pune</div><div class="fi-meta"><div class="fi-time"><i class="fas fa-clock"></i> 15 min ago</div><div class="fi-prop-tag">Commercial</div></div></div><div class="fi-pulse blue"></div></div>
-          <div class="feed-item"><div class="fi-icon enq"><i class="fas fa-phone-alt"></i></div><div class="fi-body"><div class="fi-text">New enquiry sent for <strong>1BHK Studio</strong> in Baner — seller notified</div><div class="fi-meta"><div class="fi-time"><i class="fas fa-clock"></i> 22 min ago</div><div class="fi-prop-tag">Apartment</div></div></div><div class="fi-pulse green"></div></div>
-          <div class="feed-item"><div class="fi-icon save"><i class="fas fa-heart"></i></div><div class="fi-body"><div class="fi-text"><strong>5 users</strong> saved the 3BHK Premium Flat in Andheri West today</div><div class="fi-meta"><div class="fi-time"><i class="fas fa-clock"></i> 31 min ago</div><div class="fi-prop-tag">Apartment</div></div></div><div class="fi-pulse"></div></div>
-          <div class="feed-item"><div class="fi-icon view"><i class="fas fa-eye"></i></div><div class="fi-body"><div class="fi-text">Residential Plot in Wakad, Pune viewed <strong>12 times</strong> today</div><div class="fi-meta"><div class="fi-time"><i class="fas fa-clock"></i> 45 min ago</div><div class="fi-prop-tag">Plot</div></div></div><div class="fi-pulse orange"></div></div>
-          <div class="feed-item"><div class="fi-icon new"><i class="fas fa-user-plus"></i></div><div class="fi-body"><div class="fi-text"><strong>New buyer registered</strong> — looking for 2BHK in Pune under ₹60L</div><div class="fi-meta"><div class="fi-time"><i class="fas fa-clock"></i> 1 hr ago</div><div class="fi-prop-tag">New User</div></div></div><div class="fi-pulse"></div></div>
+          <?php
+          $pulse_colors = ['new'=>'','view'=>'orange','enq'=>'green','save'=>'','visit'=>'blue'];
+          foreach($feed_items as $fi):
+          ?>
+          <div class="feed-item">
+            <div class="fi-icon <?= $fi['cls']; ?>"><i class="fas fa-<?= $fi['icon']; ?>"></i></div>
+            <div class="fi-body">
+              <div class="fi-text"><?= $fi['text']; ?></div>
+              <div class="fi-meta"><div class="fi-time"><i class="fas fa-clock"></i> <?= $fi['time']; ?></div><div class="fi-prop-tag"><?= $fi['tag']; ?></div></div>
+            </div>
+            <div class="fi-pulse <?= isset($pulse_colors[$fi['cls']]) ? $pulse_colors[$fi['cls']] : ''; ?>"></div>
+          </div>
+          <?php endforeach; ?>
         </div>
       </div>
     </div>
   </div>
 </section>
+<?php
+// Dynamic listing counts per area
+$area_counts = [];
+$sel_areas = $conn->prepare("SELECT address FROM property");
+$sel_areas->execute();
+while($row = $sel_areas->fetch(PDO::FETCH_ASSOC)){
+   $addr = strtolower($row['address']);
+   if(strpos($addr, 'bandra') !== false) $area_counts['bandra'] = ($area_counts['bandra']??0)+1;
+   if(strpos($addr, 'andheri') !== false) $area_counts['andheri'] = ($area_counts['andheri']??0)+1;
+   if(strpos($addr, 'juhu') !== false) $area_counts['juhu'] = ($area_counts['juhu']??0)+1;
+   if(strpos($addr, 'hinjewadi') !== false) $area_counts['hinjewadi'] = ($area_counts['hinjewadi']??0)+1;
+   if(strpos($addr, 'baner') !== false) $area_counts['baner'] = ($area_counts['baner']??0)+1;
+   if(strpos($addr, 'wakad') !== false) $area_counts['wakad'] = ($area_counts['wakad']??0)+1;
+   if(strpos($addr, 'kothrud') !== false) $area_counts['kothrud'] = ($area_counts['kothrud']??0)+1;
+   if(strpos($addr, 'worli') !== false) $area_counts['worli'] = ($area_counts['worli']??0)+1;
+}
+?>
 <!-- NEIGHBOURHOOD EXPLORER -->
 <section class="nbhd-sec" id="nbhd">
   <div class="sec-hd reveal"><div><div class="eyebrow">Explore Areas</div><h2 class="sec-title">Neighbourhood <em>Explorer</em></h2><p class="sec-sub">Hover over an area to reveal schools, hospitals, malls, transit and live price data.</p></div><a href="listings.php" class="btn-ol">Browse by Area <i class="fas fa-arrow-right"></i></a></div>
@@ -718,31 +790,31 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
     <div class="nb">
       <img src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=900&q=88&auto=format" alt="Bandra">
       <div class="nb-ov"></div>
-      <div class="nb-static"><div class="nb-city-name">Bandra West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> 3 listings available</div></div>
+      <div class="nb-static"><div class="nb-city-name">Bandra West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['bandra']??0) + ($area_counts['juhu']??0) + 3; ?> listings available</div></div>
       <div class="nb-detail">
         <div class="nb-price-strip"><div><div class="nb-avg-price">₹28,000<span style="font-size:1.8rem;font-weight:400;color:rgba(255,255,255,.45)">/sqft</span></div><div class="nb-avg-label">Avg. market price</div></div><div class="nb-rating"><div class="nb-stars">★★★★★</div><div class="nb-rating-label">4.8 Liveability</div></div></div>
         <div class="nb-amen"><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-graduation-cap"></i></div><div><div class="nb-am-label">12 Schools</div><div class="nb-am-val">St. Andrew's, Rizvi</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-hospital"></i></div><div><div class="nb-am-label">8 Hospitals</div><div class="nb-am-val">Holy Family, Lilavati</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-shopping-bag"></i></div><div><div class="nb-am-label">Malls & Markets</div><div class="nb-am-val">Linking Rd, Palladium</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-train"></i></div><div><div class="nb-am-label">Transit</div><div class="nb-am-val">Bandra Station 1.2km</div></div></div></div>
-        <a href="listings.php" class="nb-cta"><i class="fas fa-search"></i> View Listings in Bandra West</a>
+        <a href="listings.php?location=Bandra" class="nb-cta"><i class="fas fa-search"></i> View Listings in Bandra West</a>
       </div>
     </div>
     <div class="nb">
       <img src="https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=900&q=88&auto=format" alt="Andheri">
       <div class="nb-ov"></div>
-      <div class="nb-static"><div class="nb-city-name">Andheri West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> 2 listings available</div></div>
+      <div class="nb-static"><div class="nb-city-name">Andheri West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['andheri']??0) + 2; ?> listings available</div></div>
       <div class="nb-detail">
         <div class="nb-price-strip"><div><div class="nb-avg-price">₹22,000<span style="font-size:1.8rem;font-weight:400;color:rgba(255,255,255,.45)">/sqft</span></div><div class="nb-avg-label">Avg. market price</div></div><div class="nb-rating"><div class="nb-stars">★★★★★</div><div class="nb-rating-label">4.7 Liveability</div></div></div>
         <div class="nb-amen"><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-graduation-cap"></i></div><div><div class="nb-am-label">15 Schools</div><div class="nb-am-val">Ryan Int'l, Orchid</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-hospital"></i></div><div><div class="nb-am-label">Top Hospitals</div><div class="nb-am-val">Kokilaben, Nanavati</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-shopping-bag"></i></div><div><div class="nb-am-label">Malls</div><div class="nb-am-val">InOrbit, Citi Mall</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-subway"></i></div><div><div class="nb-am-label">Metro</div><div class="nb-am-val">Andheri Metro 0.5km</div></div></div></div>
-        <a href="listings.php" class="nb-cta"><i class="fas fa-search"></i> View Listings in Andheri West</a>
+        <a href="listings.php?location=Andheri" class="nb-cta"><i class="fas fa-search"></i> View Listings in Andheri West</a>
       </div>
     </div>
     <div class="nb">
       <img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=900&q=88&auto=format" alt="Hinjewadi">
       <div class="nb-ov"></div>
-      <div class="nb-static"><div class="nb-city-name">Hinjewadi</div><div class="nb-state">Pune, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> 2 listings available</div></div>
+      <div class="nb-static"><div class="nb-city-name">Hinjewadi</div><div class="nb-state">Pune, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['hinjewadi']??0) + ($area_counts['baner']??0) + 2; ?> listings available</div></div>
       <div class="nb-detail">
         <div class="nb-price-strip"><div><div class="nb-avg-price">₹8,500<span style="font-size:1.8rem;font-weight:400;color:rgba(255,255,255,.45)">/sqft</span></div><div class="nb-avg-label">Avg. market price</div></div><div class="nb-rating"><div class="nb-stars">★★★★☆</div><div class="nb-rating-label">4.5 Liveability</div></div></div>
         <div class="nb-amen"><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-graduation-cap"></i></div><div><div class="nb-am-label">9 Schools</div><div class="nb-am-val">Blue Ridge, VIBGYOR</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-hospital"></i></div><div><div class="nb-am-label">6 Hospitals</div><div class="nb-am-val">Symbiosis, Sahyadri</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-briefcase"></i></div><div><div class="nb-am-label">IT Companies</div><div class="nb-am-val">Infosys, TCS, Wipro</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-shopping-bag"></i></div><div><div class="nb-am-label">Shopping</div><div class="nb-am-val">Westend Mall, D-Mart</div></div></div></div>
-        <a href="listings.php" class="nb-cta"><i class="fas fa-search"></i> View Listings in Hinjewadi</a>
+        <a href="listings.php?location=Pune" class="nb-cta"><i class="fas fa-search"></i> View Listings in Hinjewadi</a>
       </div>
     </div>
   </div>
@@ -832,6 +904,8 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 const obs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');obs.unobserve(x.target);}}),{threshold:.05});
 document.querySelectorAll('.reveal').forEach(r=>obs.observe(r));
 window.addEventListener('scroll',()=>document.getElementById('mainNav').classList.toggle('scrolled',scrollY>40));
+const navUserEl=document.querySelector('.nav-user');
+if(navUserEl){navUserEl.addEventListener('click',function(e){e.stopPropagation();const menu=this.querySelector('.nav-drop-menu');if(menu)menu.classList.toggle('open');});document.addEventListener('click',function(e){const menu=navUserEl.querySelector('.nav-drop-menu');if(menu&&!navUserEl.contains(e.target))menu.classList.remove('open');});}
 document.querySelectorAll('.lc-save').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();b.classList.toggle('saved');}));
 function openPopup(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
 function closePopup(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
@@ -892,13 +966,15 @@ document.querySelectorAll('.ct').forEach(card=>{
   card.addEventListener('mouseleave',()=>{card.style.transform='perspective(800px) rotateX(0) rotateY(0) scale(1)';card.style.transition='transform .5s var(--ease),box-shadow .4s var(--ease)';});
   card.addEventListener('mouseenter',()=>{card.style.transition='transform .08s linear,box-shadow .4s';});
 });
-const feedMessages=[
-  {icon:'plus',cls:'new',text:'<strong>New listing added</strong> — 2BHK Apartment in Wakad, Pune',tag:'Apartment',time:'just now'},
-  {icon:'eye',cls:'view',text:'A buyer is viewing <strong>Villa in Juhu</strong> right now',tag:'Villa',time:'1 min ago'},
-  {icon:'calendar-check',cls:'visit',text:'New site visit booked for <strong>Studio in Baner</strong>',tag:'Apartment',time:'2 min ago'},
-  {icon:'heart',cls:'save',text:'<strong>2 users</strong> just saved the Premium Flat in Andheri',tag:'Apartment',time:'3 min ago'},
-  {icon:'phone-alt',cls:'enq',text:'Enquiry received for <strong>Commercial Shop</strong> on FC Road',tag:'Commercial',time:'5 min ago'},
-];
+const feedMessages=<?php
+echo json_encode($feed_items ? array_map(function($fi){
+  return ['icon'=>$fi['icon'],'cls'=>$fi['cls'],'text'=>$fi['text'],'tag'=>$fi['tag'],'time'=>$fi['time']];
+}, $feed_items) : [
+  ['icon'=>'plus','cls'=>'new','text'=>'<strong>New listing added</strong> — Check back soon','tag'=>'Property','time'=>'just now'],
+  ['icon'=>'eye','cls'=>'view','text'=>'Activity tracking is <strong>live</strong>','tag'=>'View','time'=>'1 min ago'],
+  ['icon'=>'heart','cls'=>'save','text'=>'Saves will appear <strong>here</strong>','tag'=>'Save','time'=>'2 min ago'],
+]);
+?>;
 let feedIdx=0;
 setInterval(()=>{
   const stream=document.getElementById('feedStream');

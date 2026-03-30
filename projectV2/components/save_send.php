@@ -1,4 +1,7 @@
 <?php
+if(session_status() === PHP_SESSION_NONE){
+   @session_start();
+}
 
 if(isset($_POST['save'])){
    if($user_id != ''){
@@ -13,16 +16,22 @@ if(isset($_POST['save'])){
       if($verify_saved->rowCount() > 0){
          $remove_saved = $conn->prepare("DELETE FROM `saved` WHERE property_id = ? AND user_id = ?");
          $remove_saved->execute([$property_id, $user_id]);
-         $success_msg[] = 'removed from saved!';
+         $_SESSION['swal_success'][] = 'Removed from saved!';
       }else{
          $insert_saved = $conn->prepare("INSERT INTO`saved`(id, property_id, user_id) VALUES(?,?,?)");
          $insert_saved->execute([$save_id, $property_id, $user_id]);
-         $success_msg[] = 'listing saved!';
+         $_SESSION['swal_success'][] = 'Property saved successfully!';
       }
 
    }else{
-      $warning_msg[] = 'please login first!';
+      $_SESSION['swal_warning'][] = 'Please login first!';
    }
+   $redirect_url = strtok($_SERVER['REQUEST_URI'], '?');
+   if(!empty($_SERVER['QUERY_STRING'])){
+      $redirect_url .= '?' . $_SERVER['QUERY_STRING'];
+   }
+   header("Location: " . $redirect_url);
+   exit();
 }
 
 if(isset($_POST['send'])){
@@ -41,16 +50,22 @@ if(isset($_POST['send'])){
       $verify_request->execute([$property_id, $user_id, $receiver]);
 
       if(($verify_request->rowCount() > 0)){
-         $warning_msg[] = 'request sent already!';
+         $_SESSION['swal_warning'][] = 'Request sent already!';
       }else{
          $send_request = $conn->prepare("INSERT INTO `requests`(id, property_id, sender, receiver) VALUES(?,?,?,?)");
          $send_request->execute([$request_id, $property_id, $user_id, $receiver]);
-         $success_msg[] = 'request sent successfully!';
+         $_SESSION['swal_success'][] = 'Enquiry sent successfully!';
       }
 
    }else{
-      $warning_msg[] = 'please login first!';
+      $_SESSION['swal_warning'][] = 'Please login first!';
    }
+   $redirect_url = strtok($_SERVER['REQUEST_URI'], '?');
+   if(!empty($_SERVER['QUERY_STRING'])){
+      $redirect_url .= '?' . $_SERVER['QUERY_STRING'];
+   }
+   header("Location: " . $redirect_url);
+   exit();
 }
 
 ?>

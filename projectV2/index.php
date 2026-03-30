@@ -26,11 +26,11 @@ function formatPrice($p){
   return '₹' . number_format($p);
 }
 
+session_start();
 // ── SAVE REDIRECT INTENT ──
 if(isset($_GET['redirect'])){
   $_SESSION['redirect_after_login'] = $_GET['redirect'];
 }
-session_start();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -411,6 +411,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 <nav class="nav" id="mainNav">
   <a href="index.php" class="logo">My<span>Estate</span></a>
   <div class="nav-links">
+    <a href="index.php">Home</a>
     <a onclick="navClick('properties')">Properties</a>
     <a onclick="navClick('upcoming')">Upcoming</a>
     <a onclick="navClick('about')">About</a>
@@ -428,6 +429,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 <!-- MOBILE NAV -->
 <div class="mob-nav" id="mobNav">
   <button class="mob-close" onclick="closeMob()"><i class="fas fa-times"></i></button>
+  <a href="index.php" onclick="closeMob()">Home</a>
   <a onclick="navClick('properties');closeMob()">Properties</a>
   <a onclick="navClick('upcoming');closeMob()">Upcoming</a>
   <a onclick="navClick('about');closeMob()">About</a>
@@ -586,7 +588,17 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
     <div class="up-p">
       <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1400&q=88&auto=format" alt="Sunrise Enclave">
       <div class="up-ov"></div><div class="up-vl">Sunrise Enclave</div>
-      <div class="up-cnt"><div class="up-n">05</div><div class="up-badge"><div class="up-dot"></div>Under Planning</div><div class="up-name">Sunrise Enclave</div><div class="up-addr"><i class="fas fa-map-marker-alt"></i>Kothrud, Pune</div><div class="up-meta"><div class="up-m"><i class="fas fa-home"></i><b>12</b>&nbsp;Bungalows</div><div class="up-m"><i class="fas fa-expand"></i><b>3500+</b>&nbsp;sqft</div><div class="up-m"><i class="fas fa-tree"></i><b>60%</b>&nbsp;Green</div></div><div class="up-launch"><i class="fas fa-calendar-alt"></i>Expected: Mar 2027</div></div>
+      <div class="up-cnt"><div class="up-n">05</div><div class="up-badge"><div class="up-dot"></div>Under Planning</div><div class="up-name">Sunrise Enclave</div><div class="up-addr"><i class="fas fa-map-marker-alt"></i>Kothrud, Pune</div><div class="up-meta"><div class="up-m"><i class="fas fa-home"></i><b>12</b>&nbsp;Bungalows</div><div class="up-m"><i class="fas fa-expand"></i><b>3500+</b>&nbsp;sqft</div><div class="up-m"><i class="fas fa-tree"></i><b>60%</b>&nbsp;Green</div></div>      <div class="up-launch"><i class="fas fa-calendar-alt"></i>Expected: Mar 2027</div></div>
+    </div>
+    <div class="up-p">
+      <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1400&q=88&auto=format" alt="Emerald Bay">
+      <div class="up-ov"></div><div class="up-vl">Emerald Bay Residences</div>
+      <div class="up-cnt"><div class="up-n">06</div><div class="up-badge"><div class="up-dot"></div>Under Construction</div><div class="up-name">Emerald Bay Residences</div><div class="up-addr"><i class="fas fa-map-marker-alt"></i>Juhu Tara Road, Mumbai</div><div class="up-meta"><div class="up-m"><i class="fas fa-building"></i><b>48</b>&nbsp;Units</div><div class="up-m"><i class="fas fa-layer-group"></i><b>22</b>&nbsp;Floors</div><div class="up-m"><i class="fas fa-home"></i><b>3–5</b>&nbsp;BHK</div></div><div class="up-launch"><i class="fas fa-calendar-alt"></i>Expected: Nov 2026</div></div>
+    </div>
+    <div class="up-p">
+      <img src="https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=1400&q=88&auto=format" alt="Orchid Heights">
+      <div class="up-ov"></div><div class="up-vl">Orchid Heights</div>
+      <div class="up-cnt"><div class="up-n">07</div><div class="up-badge"><div class="up-dot"></div>Launching Q2 2026</div><div class="up-name">Orchid Heights</div><div class="up-addr"><i class="fas fa-map-marker-alt"></i>Koregaon Park, Pune</div><div class="up-meta"><div class="up-m"><i class="fas fa-building"></i><b>60</b>&nbsp;Units</div><div class="up-m"><i class="fas fa-layer-group"></i><b>25</b>&nbsp;Floors</div><div class="up-m"><i class="fas fa-home"></i><b>2–4</b>&nbsp;BHK</div></div><div class="up-launch"><i class="fas fa-calendar-alt"></i>Expected: Apr 2027</div></div>
     </div>
   </div>
 </section>

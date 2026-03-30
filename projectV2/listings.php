@@ -79,7 +79,7 @@ a{text-decoration:none;}
 .nav-user:hover{border-color:var(--r);background:var(--rp);}
 .nav-av{width:3.4rem;height:3.4rem;border-radius:50%;background:linear-gradient(135deg,var(--r),var(--rd));display:grid;place-items:center;font-size:1.4rem;font-weight:800;color:#fff;flex-shrink:0;}
 .nav-drop-menu{display:none;position:absolute;top:calc(100% + 1rem);right:0;background:var(--white);border-radius:1.6rem;border:1.5px solid var(--line);box-shadow:0 20px 60px rgba(214,40,40,.15);padding:.8rem;min-width:20rem;z-index:100;}
-.nav-user:hover .nav-drop-menu{display:block;}
+.nav-drop-menu.open{display:block;}
 .nd-item{display:flex;align-items:center;gap:1rem;padding:1.1rem 1.4rem;border-radius:1rem;font-size:1.3rem;color:var(--ink2);transition:all .18s;}
 .nd-item i{width:2rem;text-align:center;color:var(--ink3);font-size:1.2rem;}
 .nd-item:hover{background:var(--rp);color:var(--r);}
@@ -157,6 +157,16 @@ a{text-decoration:none;}
 .empty-btn{display:inline-flex;align-items:center;gap:.8rem;background:linear-gradient(135deg,var(--r),var(--rd));color:#fff;border:none;border-radius:99px;padding:1.2rem 3rem;font-size:1.3rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 8px 24px rgba(214,40,40,.3);transition:all .25s;}
 .empty-btn:hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(214,40,40,.45);}
 
+/* ── FILTER TABS ── */
+.filter-tab{padding:.8rem 2rem;border-radius:99px;font-size:1.25rem;font-weight:700;color:var(--ink3);background:var(--white);border:1.5px solid var(--line);transition:all .25s;text-decoration:none;cursor:pointer;font-family:'Outfit',sans-serif;}
+.filter-tab:hover{border-color:var(--r);color:var(--r);background:var(--rp);}
+.filter-tab.active{background:linear-gradient(135deg,var(--r),var(--rd));color:#fff;border-color:var(--r);box-shadow:0 4px 14px rgba(214,40,40,.3);}
+
+/* ── IMAGE NAV ── */
+.pc-img-nav{position:absolute;bottom:1.3rem;left:1.3rem;display:flex;gap:.5rem;z-index:3;}
+.pc-img-btn{width:3rem;height:3rem;border-radius:50%;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border:none;cursor:pointer;display:grid;place-items:center;font-size:1rem;color:var(--ink);transition:all .2s;}
+.pc-img-btn:hover{background:var(--r);color:#fff;}
+
 /* ── FOOTER ── */
 .footer{background:linear-gradient(135deg,#fff0f0,#fde0e0);border-top:1px solid var(--line);padding:6rem 6% 3.5rem;}
 .foot-grid{display:grid;grid-template-columns:2.2fr 1fr 1fr 1.3fr;gap:5rem;padding-bottom:4rem;border-bottom:1px solid var(--line);max-width:130rem;margin:0 auto;}
@@ -209,7 +219,7 @@ a{text-decoration:none;}
   <div class="nav-center">
     <a href="home.php">Home</a>
     <a href="listings.php" class="active">Properties</a>
-    <a href="search.php">Search</a>
+    <a href="home.php#upSec">Upcoming</a>
     <a href="about.php">About</a>
     <a href="contact.php">Contact</a>
   </div>
@@ -269,6 +279,17 @@ a{text-decoration:none;}
   </div>
 </section>
 
+<!-- FILTER BAR -->
+<section style="max-width:130rem;margin:0 auto;padding:2rem 6% 0;">
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+    <a href="listings.php" class="filter-tab <?= !isset($_GET['type']) || empty($_GET['type']) ? 'active' : ''; ?>">All Properties</a>
+    <a href="listings.php?type=apartment" class="filter-tab <?= (isset($_GET['type']) && $_GET['type'] == 'apartment') ? 'active' : ''; ?>">Apartments</a>
+    <a href="listings.php?type=villa" class="filter-tab <?= (isset($_GET['type']) && $_GET['type'] == 'villa') ? 'active' : ''; ?>">Villas</a>
+    <a href="listings.php?type=plot" class="filter-tab <?= (isset($_GET['type']) && $_GET['type'] == 'plot') ? 'active' : ''; ?>">Plots</a>
+    <a href="listings.php?type=commercial" class="filter-tab <?= (isset($_GET['type']) && $_GET['type'] == 'commercial') ? 'active' : ''; ?>">Commercial</a>
+  </div>
+</section>
+
 <!-- LISTINGS -->
 <section class="listings-sec">
   <div class="listings-grid">
@@ -282,8 +303,8 @@ a{text-decoration:none;}
           $search_params[] = '%' . $_GET['location'] . '%';
        }
        if(isset($_GET['type']) && !empty($_GET['type'])){
-          $search_where[] = "type LIKE ?";
-          $search_params[] = '%' . $_GET['type'] . '%';
+           $search_where[] = "type = ?";
+           $search_params[] = $_GET['type'];
        }
        if(isset($_GET['budget']) && !empty($_GET['budget'])){
           $budget_parts = explode('-', $_GET['budget']);
@@ -333,22 +354,36 @@ a{text-decoration:none;}
              $price_fmt = '₹' . number_format($price_raw);
           }
 
-          $delay_style = 'transition-delay:' . ($card_delay * 0.06) . 's';
-          $card_delay++;
-          if($card_delay > 8) $card_delay = 0; // reset delay after 8 cards
-    ?>
+           $delay_style = 'transition-delay:' . ($card_delay * 0.06) . 's';
+           $card_delay++;
+           if($card_delay > 8) $card_delay = 0; // reset delay after 8 cards
+
+           $images = [$fetch_property['image_01']];
+           if(!empty($fetch_property['image_02'])) $images[] = $fetch_property['image_02'];
+           if(!empty($fetch_property['image_03'])) $images[] = $fetch_property['image_03'];
+           if(!empty($fetch_property['image_04'])) $images[] = $fetch_property['image_04'];
+           if(!empty($fetch_property['image_05'])) $images[] = $fetch_property['image_05'];
+           $images_json = json_encode($images);
+     ?>
     <div class="pc reveal" style="<?= $delay_style; ?>">
       <form action="" method="POST" style="display:contents;">
         <input type="hidden" name="property_id" value="<?= $fetch_property['id']; ?>">
         <div class="pc-img">
-          <img src="uploaded_files/<?= $fetch_property['image_01']; ?>" alt="<?= htmlspecialchars($fetch_property['property_name']); ?>">
+          <img src="uploaded_files/<?= $fetch_property['image_01']; ?>" alt="<?= htmlspecialchars($fetch_property['property_name']); ?>" class="pc-main-img" id="img_<?= $fetch_property['id']; ?>">
           <div class="pc-ov"></div>
           <div class="pc-badge"><i class="far fa-image"></i> <?= $total_images; ?> Photos</div>
+          <?php if($total_images > 1): ?>
+          <div class="pc-img-nav">
+            <button type="button" class="pc-img-btn" onclick="event.preventDefault();event.stopPropagation();changeImg('img_<?= $fetch_property['id']; ?>', '<?= $fetch_property['id']; ?>', -1)"><i class="fas fa-chevron-left"></i></button>
+            <button type="button" class="pc-img-btn" onclick="event.preventDefault();event.stopPropagation();changeImg('img_<?= $fetch_property['id']; ?>', '<?= $fetch_property['id']; ?>', 1)"><i class="fas fa-chevron-right"></i></button>
+          </div>
+          <?php endif; ?>
           <button type="submit" name="save" class="pc-save <?= $is_saved ? 'saved' : ''; ?>">
             <i class="<?= $is_saved ? 'fas' : 'far'; ?> fa-heart"></i>
           </button>
           <div class="pc-price-tag"><span><?= $price_fmt; ?></span></div>
         </div>
+        <input type="hidden" class="card-images" data-images='<?= htmlspecialchars($images_json); ?>' id="imgs_<?= $fetch_property['id']; ?>">
         <div class="pc-body">
           <div class="pc-type"><?= $fetch_property['type']; ?> • <?= $fetch_property['offer']; ?></div>
           <div class="pc-name"><?= htmlspecialchars($fetch_property['property_name']); ?></div>
@@ -417,6 +452,37 @@ document.querySelectorAll('.reveal').forEach(r => obs.observe(r));
 window.addEventListener('scroll', () => {
   document.getElementById('mainNav').classList.toggle('scrolled', scrollY > 40);
 });
+
+// Profile dropdown toggle
+const navUser = document.querySelector('.nav-user');
+if(navUser){
+  navUser.addEventListener('click', function(e){
+    e.stopPropagation();
+    const menu = this.querySelector('.nav-drop-menu');
+    menu.classList.toggle('open');
+  });
+  document.addEventListener('click', function(e){
+    const menu = navUser.querySelector('.nav-drop-menu');
+    if(menu && !navUser.contains(e.target)) menu.classList.remove('open');
+  });
+}
+
+// Image carousel for property cards
+const cardImages = {};
+document.querySelectorAll('.card-images').forEach(el => {
+  const id = el.id.replace('imgs_', '');
+  cardImages[id] = JSON.parse(el.dataset.images);
+  cardImages[id + '_idx'] = 0;
+});
+
+function changeImg(imgId, propId, dir) {
+  const imgs = cardImages[propId];
+  if (!imgs) return;
+  let idx = cardImages[propId + '_idx'] || 0;
+  idx = (idx + dir + imgs.length) % imgs.length;
+  cardImages[propId + '_idx'] = idx;
+  document.getElementById(imgId).src = 'uploaded_files/' + imgs[idx];
+}
 </script>
 
 </body>

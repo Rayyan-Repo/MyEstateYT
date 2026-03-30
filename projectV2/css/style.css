@@ -395,3 +395,27 @@ input[type="number"]::-webkit-outer-spin-button{
    margin: 0;
 }
 input[type="number"]{ -moz-appearance: textfield; }
+
+/* SweetAlert custom styles */
+.me-swal-popup{
+   border-radius: 12px !important;
+   padding: 30px 40px !important;
+   box-shadow: 0 10px 40px rgba(0,0,0,.15) !important;
+   font-family: 'Montserrat', sans-serif !important;
+}
+.me-swal-title{
+   font-size: 1.8rem !important;
+   font-weight: 500 !important;
+   color: var(--black) !important;
+   line-height: 1.4 !important;
+}
+.me-swal-icon{
+   border-color: var(--main-color) !important;
+}
+.me-swal-icon::before,
+.me-swal-icon::after{
+   background-color: var(--main-color) !important;
+}
+.swal2-timer-progress-bar{
+   background: var(--main-color) !important;
+}

@@ -1,5 +1,8 @@
 <?php
 session_start();
+if(isset($_GET['redirect'])){
+   $_SESSION['redirect_after_login'] = $_GET['redirect'];
+}
 include 'components/connect.php';
 include 'components/mailer.php';
 

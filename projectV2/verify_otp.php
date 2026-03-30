@@ -41,7 +41,25 @@ if(isset($_POST['verify'])){
 
       // Login
       setcookie('user_id', $uid, time() + 60*60*24*30, '/');
-      header('location:home.php');
+      if(isset($_SESSION['redirect_after_login'])){
+         $redirect = $_SESSION['redirect_after_login'];
+         unset($_SESSION['redirect_after_login']);
+         if($redirect === 'listings'){
+            header('location:listings.php');
+         } elseif($redirect === 'upcoming'){
+            header('location:home.php#upSec');
+         } elseif($redirect === 'about'){
+            header('location:about.php');
+         } elseif($redirect === 'contact'){
+            header('location:contact.php');
+         } elseif($redirect === 'properties'){
+            header('location:listings.php');
+         } else {
+            header('location:home.php');
+         }
+      } else {
+         header('location:home.php');
+      }
       exit();
    } else {
       $error_msg[] = 'Invalid or expired OTP! Please try again or resend.';

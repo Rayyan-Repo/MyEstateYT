@@ -90,7 +90,7 @@ a{text-decoration:none;}
 .nav-user:hover{border-color:var(--r);background:var(--rp);}
 .nav-av{width:3.4rem;height:3.4rem;border-radius:50%;background:linear-gradient(135deg,var(--r),var(--rd));display:grid;place-items:center;font-size:1.4rem;font-weight:800;color:#fff;flex-shrink:0;}
 .nav-drop-menu{display:none;position:absolute;top:calc(100% + 1rem);right:0;background:var(--white);border-radius:1.6rem;border:1.5px solid var(--line);box-shadow:0 20px 60px rgba(214,40,40,.15);padding:.8rem;min-width:20rem;z-index:100;}
-.nav-user:hover .nav-drop-menu{display:block;}
+.nav-drop-menu.open{display:block;}
 .nd-item{display:flex;align-items:center;gap:1rem;padding:1.1rem 1.4rem;border-radius:1rem;font-size:1.3rem;color:var(--ink2);transition:all .18s;}
 .nd-item i{width:2rem;text-align:center;color:var(--ink3);font-size:1.2rem;}
 .nd-item:hover{background:var(--rp);color:var(--r);}
@@ -184,7 +184,7 @@ a{text-decoration:none;}
   <div class="nav-center">
     <a href="home.php">Home</a>
     <a href="listings.php">Properties</a>
-    <a href="search.php">Search</a>
+    <a href="home.php#upSec">Upcoming</a>
     <a href="about.php">About</a>
     <a href="contact.php" class="active">Contact</a>
   </div>
@@ -293,6 +293,20 @@ a{text-decoration:none;}
 window.addEventListener('scroll', () => {
   document.getElementById('mainNav').classList.toggle('scrolled', scrollY > 40);
 });
+
+// Profile dropdown toggle
+const navUser = document.querySelector('.nav-user');
+if(navUser){
+  navUser.addEventListener('click', function(e){
+    e.stopPropagation();
+    const menu = this.querySelector('.nav-drop-menu');
+    menu.classList.toggle('open');
+  });
+  document.addEventListener('click', function(e){
+    const menu = navUser.querySelector('.nav-drop-menu');
+    if(menu && !navUser.contains(e.target)) menu.classList.remove('open');
+  });
+}
 </script>
 </body>
 </html>
