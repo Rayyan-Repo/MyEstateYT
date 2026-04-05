@@ -11,13 +11,9 @@ if(isset($_COOKIE['user_id'])){
    exit();
 }
 
-// PASSWORD STRENGTH CHECK
+// PASSWORD STRENGTH CHECK (min 6 chars for ease of use)
 function isStrongPassword($pass) {
-   if(strlen($pass) < 8) return false;
-   if(!preg_match('/[A-Z]/', $pass)) return false;
-   if(!preg_match('/[a-z]/', $pass)) return false;
-   if(!preg_match('/[0-9]/', $pass)) return false;
-   if(!preg_match('/[\W_]/', $pass)) return false;
+   if(strlen($pass) < 6) return false;
    return true;
 }
 
@@ -45,7 +41,7 @@ if(isset($_POST['submit'])){
          // Generate OTP
          $otp        = generateOTP();
          $expires_at_query = $conn->query("SELECT DATE_ADD(NOW(), INTERVAL 5 MINUTE) as exp")->fetch();
-         $expires_at = $expires_at_query['exp']; // 5 minutes from MySQL time
+         $expires_at = $expires_at_query['exp'];
 
          // Delete old OTPs for this email
          $del = $conn->prepare("DELETE FROM otp_verification WHERE email = ?");
@@ -67,7 +63,14 @@ if(isset($_POST['submit'])){
             header('location:verify_otp.php');
             exit();
          } else {
-            $error_msg[] = 'Failed to send OTP. Please try again!';
+            // Email failed — register directly so user is not blocked
+            $uid = create_unique_id();
+            $conn->prepare("INSERT INTO users(id,name,number,email,password) VALUES(?,?,?,?,?)")
+                 ->execute([$uid, $name, $number, $email, sha1($pass)]);
+            $_SESSION['user_id'] = $uid;
+            setcookie('user_id', $uid, time()+60*60*24*30, '/');
+            header('location:home.php');
+            exit();
          }
       }
    }

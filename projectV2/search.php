@@ -79,7 +79,7 @@ a{text-decoration:none;}
 .nav-user:hover{border-color:var(--r);background:var(--rp);}
 .nav-av{width:3.4rem;height:3.4rem;border-radius:50%;background:linear-gradient(135deg,var(--r),var(--rd));display:grid;place-items:center;font-size:1.4rem;font-weight:800;color:#fff;flex-shrink:0;}
 .nav-drop-menu{display:none;position:absolute;top:calc(100% + 1rem);right:0;background:var(--white);border-radius:1.6rem;border:1.5px solid var(--line);box-shadow:0 20px 60px rgba(214,40,40,.15);padding:.8rem;min-width:20rem;z-index:100;}
-.nav-user:hover .nav-drop-menu{display:block;}
+
 .nd-item{display:flex;align-items:center;gap:1rem;padding:1.1rem 1.4rem;border-radius:1rem;font-size:1.3rem;color:var(--ink2);transition:all .18s;}
 .nd-item i{width:2rem;text-align:center;color:var(--ink3);font-size:1.2rem;}
 .nd-item:hover{background:var(--rp);color:var(--r);}
@@ -434,7 +434,7 @@ a{text-decoration:none;}
           </div>
           <div class="pc-acts">
             <a href="view_property.php?get_id=<?= $fetch_property['id']; ?>" class="pca v"><i class="fas fa-eye"></i> View Details</a>
-            <button type="submit" name="send" class="pca e"><i class="fas fa-phone-alt"></i> Enquire</button>
+            <button type="submit" name="send" class="pca e"><i class="fas fa-paper-plane"></i> Enquire</button>
           </div>
         </div>
       </form>

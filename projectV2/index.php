@@ -1,13 +1,7 @@
 <?php
-// ── COOKIE CHECK: if already logged in, redirect ──
-if(isset($_COOKIE['user_id'])){
-  header("Location: home.php");
-  exit();
-}
-if(isset($_COOKIE['admin_id'])){
-  header("Location: admin/dashboard.php");
-  exit();
-}
+// ── index.php is ALWAYS the pre-login dashboard ──
+// No auto-redirect even if user_id cookie exists.
+// Users must explicitly login via login.php
 
 // ── DB CONNECTION ──
 include 'components/connect.php';

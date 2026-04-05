@@ -347,11 +347,10 @@ window.addEventListener('scroll',()=>document.getElementById('mainNav').classLis
 const navUserEl = document.getElementById('navUser');
 const navMenu   = document.getElementById('navDropMenu');
 if (navUserEl) {
-  navUserEl.addEventListener('mouseenter', () => navMenu.classList.add('open'));
-  navUserEl.addEventListener('mouseleave', () => navMenu.classList.remove('open'));
   navUserEl.addEventListener('click', (e) => { e.stopPropagation(); navMenu.classList.toggle('open'); });
+  navMenu.addEventListener('click', (e) => { e.stopPropagation(); });
   document.addEventListener('click', () => navMenu.classList.remove('open'));
-  window.addEventListener('scroll', () => navMenu.classList.remove('open'));
+  window.addEventListener('scroll', () => navMenu.classList.remove('open'), {passive:true});
 }
 
 // Logout confirmation

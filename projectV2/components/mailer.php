@@ -14,7 +14,7 @@ function sendMail($to_email, $to_name, $subject, $html_body) {
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
         $mail->Username   = 'rayyanebhagat@gmail.com'; // apna Gmail yahan
-        $mail->Password   = 'wftk fwjz rquv eeno';    // 16 digit app password yahan
+        $mail->Password   = 'wftkfwjzrquveeno';        // 16 digit app password (no spaces)
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
         $mail->CharSet    = 'UTF-8';

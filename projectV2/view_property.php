@@ -299,7 +299,7 @@ a{text-decoration:none;}
         <div class="nd-sep"></div>
         <a href="update.php" class="nd-item"><i class="fas fa-user-edit"></i>Edit Profile</a>
         <div class="nd-sep"></div>
-        <a href="components/user_logout.php" class="nd-item nd-danger" onclick="return confirm('Logout?');"><i class="fas fa-sign-out-alt"></i>Logout</a>
+        <a href="javascript:void(0)" onclick="confirmLogout()" class="nd-item nd-danger"><i class="fas fa-sign-out-alt"></i>Logout</a>
       </div>
     </div>
     <?php }else{ ?>
@@ -316,8 +316,9 @@ a{text-decoration:none;}
   <div class="vp-gallery">
     <div class="swiper vpSwiper">
       <div class="swiper-wrapper">
-        <?php foreach($images as $img): ?>
-        <div class="swiper-slide"><img src="uploaded_files/<?= $img; ?>" alt="<?= htmlspecialchars($fetch_property['property_name']); ?>"></div>
+        <?php foreach($images as $img):
+          $img_src = (strpos($img,'http')===0) ? $img : 'uploaded_files/'.$img; ?>
+        <div class="swiper-slide"><img src="<?= htmlspecialchars($img_src) ?>" alt="<?= htmlspecialchars($fetch_property['property_name']); ?>"></div>
         <?php endforeach; ?>
       </div>
       <div class="swiper-pagination"></div>
@@ -334,13 +335,7 @@ a{text-decoration:none;}
         <?php if($fetch_property['offer'] == 'rent'): ?><div class="vp-price-sub">per month</div><?php else: ?><div class="vp-price-sub">Negotiable</div><?php endif; ?>
       </div>
       <div class="vp-price-inline-right">
-        <div class="vp-owner" style="margin-bottom:0;">
-          <div class="vp-owner-av"><?= strtoupper(substr($fetch_user['name'], 0, 1)); ?></div>
-          <div>
-            <div class="vp-owner-name"><?= htmlspecialchars($fetch_user['name']); ?></div>
-            <div class="vp-owner-role">Property Owner</div>
-          </div>
-        </div>
+        <!-- owner hidden: removed name display per user request -->
         <form action="" method="POST" style="display:contents;">
           <input type="hidden" name="property_id" value="<?= $property_id; ?>">
           <button type="submit" name="save" class="vp-btn <?= $is_saved ? 'saved' : 'secondary'; ?>" style="width:auto;padding:1.2rem 2rem;"><i class="fas fa-heart"></i> <?= $is_saved ? 'Saved' : 'Save'; ?></button>
@@ -398,7 +393,7 @@ a{text-decoration:none;}
           <?php if(!empty($fetch_property['deposite'])): ?>
           <div class="vp-detail"><div class="vp-detail-icon"><i class="fas fa-wallet"></i></div><div><div class="vp-detail-label">Deposit</div><div class="vp-detail-val">₹<?= number_format($fetch_property['deposite']); ?></div></div></div>
           <?php endif; ?>
-          <div class="vp-detail"><div class="vp-detail-icon"><i class="fas fa-calendar"></i></div><div><div class="vp-detail-label">Listed On</div><div class="vp-detail-val"><?= $fetch_property['date']; ?></div></div></div>
+          <!-- Listed On: hidden per user request -->
         </div>
       </div>
 
@@ -527,6 +522,13 @@ if(navUser){
   navMenu.addEventListener('click', function(e){ e.stopPropagation(); });
   document.addEventListener('click', function(e){ if(!navUser.contains(e.target)) navMenu.classList.remove('open'); });
   window.addEventListener('scroll', function(){ navMenu.classList.remove('open'); }, {passive:true});
+}
+
+// Logout confirmation
+function confirmLogout(){
+  swal({title:'Logout?',text:'Are you sure you want to logout?',icon:'warning',
+    buttons:['Cancel','Logout'],dangerMode:true
+  }).then(ok=>{ if(ok) window.location='components/user_logout.php'; });
 }
 
 // Book Visit popup

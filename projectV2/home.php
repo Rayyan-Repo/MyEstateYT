@@ -546,6 +546,15 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
   .hp{justify-content:center;}
   .agent-steps{grid-template-columns:1fr;}
 }
+/* ── HERO IMAGE SLIDER ── */
+.hr-sl{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s cubic-bezier(.22,1,.36,1);z-index:0;}
+.hr-sl.hr-on{opacity:1;}
+.hero-r>img:first-child{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s cubic-bezier(.22,1,.36,1);z-index:0;}
+.hero-r>img:first-child.hr-on{opacity:1;}
+.hero-r-grad,.hf{z-index:2;position:relative;}
+.hr-dots{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;gap:.7rem;z-index:3;}
+.hr-dot{width:.7rem;height:.7rem;border-radius:50%;background:rgba(255,255,255,.45);border:none;padding:0;cursor:pointer;transition:all .35s;}
+.hr-dot.on{width:2.4rem;border-radius:99px;background:#fff;}
 </style>
 </head>
 <body>
@@ -695,8 +704,13 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
       <div class="tr-item"><i class="fas fa-headset"></i> 7-Day Support</div>
     </div>
   </div>
-  <div class="hero-r">
-    <img src="https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?w=1400&q=90&auto=format" alt="Property">
+  <div class="hero-r" id="heroR">
+    <img src="https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?w=1400&q=90&auto=format" alt="Premium Property" id="hrImg0">
+    <img class="hr-sl" src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1400&q=90&auto=format" alt="Luxury Villa" id="hrImg1" loading="eager">
+    <img class="hr-sl" src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1400&q=90&auto=format" alt="Modern Apartment" id="hrImg2" loading="eager">
+    <img class="hr-sl" src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1400&q=90&auto=format" alt="Beautiful Home" id="hrImg3" loading="eager">
+    <img class="hr-sl" src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&q=90&auto=format" alt="Elegant Interior" id="hrImg4" loading="eager">
+    <div class="hr-dots" id="hrDots"></div>
     <div class="hero-r-grad"></div>
     <div class="hf hf1"><div class="hf-ic"><i class="fas fa-home"></i></div><div class="hf-n"><?= $total_listings; ?>+</div><div class="hf-l">Properties Listed</div></div>
     <div class="hf hf2"><div class="hf-ic"><i class="fas fa-users"></i></div><div class="hf-n"><?= $total_users; ?>+</div><div class="hf-l">Happy Buyers</div></div>
@@ -1152,6 +1166,33 @@ setInterval(()=>{
   if(stream.children.length>8)stream.lastChild.remove();
   feedIdx++;
 },5000);
+</script>
+<!-- Hero Image Slider -->
+<script>
+(function(){
+  var imgs=[document.getElementById('hrImg0'),document.getElementById('hrImg1'),document.getElementById('hrImg2'),document.getElementById('hrImg3'),document.getElementById('hrImg4')];
+  var dotsWrap=document.getElementById('hrDots');
+  var cur=0;
+  // Build dots
+  imgs.forEach(function(_,i){
+    var d=document.createElement('button');
+    d.className='hr-dot'+(i===0?' on':'');
+    d.setAttribute('aria-label','Slide '+(i+1));
+    d.addEventListener('click',function(){goSlide(i);clearInterval(timer);timer=setInterval(nextSlide,5000);});
+    dotsWrap.appendChild(d);
+  });
+  function goSlide(n){
+    imgs[cur].classList.remove('hr-on');imgs[cur].style.opacity='';
+    dotsWrap.children[cur].classList.remove('on');
+    cur=n;
+    imgs[cur].classList.add('hr-on');if(cur===0){imgs[cur].style.opacity='1';}
+    dotsWrap.children[cur].classList.add('on');
+  }
+  function nextSlide(){goSlide((cur+1)%imgs.length);}
+  // Show first slide
+  imgs[0].classList.add('hr-on');imgs[0].style.opacity='1';
+  var timer=setInterval(nextSlide,5000);
+})();
 </script>
 </body>
 </html>

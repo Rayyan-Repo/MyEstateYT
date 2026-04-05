@@ -598,7 +598,8 @@ section {
   #menu-btn { display: block; }
   .header #close-btn { display: block; }
   .header { left: -26rem; transition: 0.3s ease; }
-  .header.active { left: 0; box-shadow: 0 0 0 100vw rgba(0,0,0,0.6); }
+  .header.active { left: 0; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+  .header.active::after { content:''; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:-1; pointer-events:none; }
 }
 
 @media (max-width: 768px) {

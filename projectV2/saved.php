@@ -185,7 +185,7 @@ a{text-decoration:none;}
         <div class="nd-sep"></div>
         <a href="update.php" class="nd-item"><i class="fas fa-user-edit"></i>Edit Profile</a>
         <div class="nd-sep"></div>
-        <a href="components/user_logout.php" class="nd-item nd-danger" onclick="return confirm('Logout?');"><i class="fas fa-sign-out-alt"></i>Logout</a>
+        <a href="javascript:void(0)" onclick="confirmLogout()" class="nd-item nd-danger"><i class="fas fa-sign-out-alt"></i>Logout</a>
       </div>
     </div>
   </div>
@@ -250,7 +250,7 @@ a{text-decoration:none;}
           </div>
           <div class="pc-acts">
             <a href="view_property.php?get_id=<?= $fetch_property['id']; ?>" class="pca v"><i class="fas fa-eye"></i> View Details</a>
-            <button type="submit" name="send" class="pca e"><i class="fas fa-phone-alt"></i> Enquire</button>
+            <button type="submit" name="send" class="pca e"><i class="fas fa-paper-plane"></i> Enquire</button>
             <button type="submit" name="save" class="pca rm"><i class="fas fa-heart-broken"></i> Remove</button>
           </div>
         </div>
@@ -321,7 +321,7 @@ a{text-decoration:none;}
   </div>
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/sweetalert/2.1.2/sweetalert.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
 <?php include 'components/message.php'; ?>
 <script>
 const obs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');obs.unobserve(x.target);}}),{threshold:.05});
@@ -339,6 +339,13 @@ if(navUser){
     const m=navUser.querySelector('.nav-drop-menu');
     if(!navUser.contains(e.target))m.classList.remove('open');
   });
+  window.addEventListener('scroll',function(){navUser.querySelector('.nav-drop-menu').classList.remove('open');},{passive:true});
+}
+// Logout confirmation
+function confirmLogout(){
+  swal({title:'Logout?',text:'Are you sure you want to logout?',icon:'warning',
+    buttons:['Cancel','Logout'],dangerMode:true
+  }).then(ok=>{if(ok)window.location='components/user_logout.php';});
 }
 </script>
 </body>

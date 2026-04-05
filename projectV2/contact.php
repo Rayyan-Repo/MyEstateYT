@@ -191,11 +191,11 @@ a{text-decoration:none;}
   <div class="nav-right">
     <?php if($user_id != ''){ ?>
     <a href="saved.php" class="nav-icon"><i class="fas fa-heart"></i><?php if($nav_saved_count > 0){ ?><span class="nav-badge"><?= $nav_saved_count; ?></span><?php } ?></a>
-    <div class="nav-user">
+    <div class="nav-user" id="navUser">
       <div class="nav-av"><?= $nav_user_initial; ?></div>
       <span style="font-size:1.3rem;font-weight:700;color:var(--ink);"><?= htmlspecialchars($nav_user_name); ?></span>
       <i class="fas fa-chevron-down" style="font-size:1rem;color:var(--ink3);margin-left:.4rem;"></i>
-      <div class="nav-drop-menu">
+      <div class="nav-drop-menu" id="navDropMenuContact">
         <a href="saved.php" class="nd-item"><i class="fas fa-heart"></i>Saved Properties</a>
         <a href="requests.php" class="nd-item"><i class="fas fa-file-alt"></i>My Requests</a>
         <div class="nd-sep"></div>
@@ -203,7 +203,7 @@ a{text-decoration:none;}
         <div class="nd-sep"></div>
         <a href="update.php" class="nd-item"><i class="fas fa-user-edit"></i>Edit Profile</a>
         <div class="nd-sep"></div>
-        <a href="components/user_logout.php" class="nd-item nd-danger" onclick="return confirm('Logout?');"><i class="fas fa-sign-out-alt"></i>Logout</a>
+        <a href="javascript:void(0)" onclick="confirmLogout()" class="nd-item nd-danger"><i class="fas fa-sign-out-alt"></i>Logout</a>
       </div>
     </div>
     <?php }else{ ?>
@@ -288,11 +288,17 @@ window.addEventListener('scroll', () => {
 // Click-based nav dropdown
 const navUser = document.getElementById('navUser');
 if(navUser){
-  const menu = navUser.querySelector('.nav-drop-menu');
+  const menu = document.getElementById('navDropMenuContact');
   navUser.addEventListener('click', function(e){ e.stopPropagation(); menu.classList.toggle('open'); });
   menu.addEventListener('click', function(e){ e.stopPropagation(); });
   document.addEventListener('click', function(e){ if(!navUser.contains(e.target)) menu.classList.remove('open'); });
   window.addEventListener('scroll', function(){ menu.classList.remove('open'); }, {passive:true});
+}
+// Logout confirmation
+function confirmLogout(){
+  swal({ title: 'Logout?', text: 'Are you sure you want to logout?', icon: 'warning',
+    buttons: ['Cancel', 'Logout'], dangerMode: true
+  }).then(ok => { if(ok) window.location = 'components/user_logout.php'; });
 }
 </script>
 </body>

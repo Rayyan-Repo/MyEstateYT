@@ -38,7 +38,7 @@ CREATE TABLE `admins` (
 --
 
 INSERT INTO `admins` (`id`, `name`, `password`) VALUES
-('BcjKNX58e4x7bIqIvxG7', 'admin', '6216f8a75fd5bb3d5f22b6f9958cdede3fc086c2');
+('BcjKNX58e4x7bIqIvxG7', 'admin', 'f865b53623b121fd34ee5426c792e5c33af8c227'); -- SHA1('admin123')
 
 -- --------------------------------------------------------
 
@@ -51,7 +51,9 @@ CREATE TABLE `messages` (
   `name` varchar(50) NOT NULL,
   `email` varchar(50) NOT NULL,
   `number` varchar(10) NOT NULL,
-  `message` varchar(1000) NOT NULL
+  `message` varchar(1000) NOT NULL,
+  `property_id` varchar(20) DEFAULT NULL,
+  `responded` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -112,7 +114,13 @@ CREATE TABLE `requests` (
   `property_id` varchar(20) NOT NULL,
   `sender` varchar(20) NOT NULL,
   `receiver` varchar(20) NOT NULL,
-  `date` date NOT NULL DEFAULT current_timestamp()
+  `date` date NOT NULL DEFAULT current_timestamp(),
+  `visit_date` date DEFAULT NULL,
+  `time_slot` varchar(50) DEFAULT NULL,
+  `purpose` varchar(200) DEFAULT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'pending',
+  `user_name` varchar(100) DEFAULT NULL,
+  `user_phone` varchar(15) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -138,7 +146,24 @@ CREATE TABLE `users` (
   `name` varchar(50) NOT NULL,
   `number` varchar(10) NOT NULL,
   `email` varchar(50) NOT NULL,
-  `password` varchar(50) NOT NULL
+  `password` varchar(50) NOT NULL,
+  `date` date NOT NULL DEFAULT (CURRENT_DATE)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `otp_verification`
+--
+
+CREATE TABLE `otp_verification` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `email` varchar(100) NOT NULL,
+  `otp` varchar(10) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `is_used` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 COMMIT;
 

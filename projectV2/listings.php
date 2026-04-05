@@ -142,6 +142,7 @@ a{text-decoration:none;}
 .pc-admin-av{width:3.4rem;height:3.4rem;border-radius:50%;background:linear-gradient(135deg,var(--rp2),var(--rp3));display:grid;place-items:center;font-size:1.3rem;font-weight:800;color:var(--r);flex-shrink:0;}
 .pc-admin-name{font-size:1.2rem;font-weight:600;color:var(--ink);}
 .pc-admin-date{font-size:1.05rem;color:var(--ink3);}
+.pc-admin{display:none;}
 .pc-acts{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:auto;padding-top:1.2rem;}
 .pca{padding:.7rem 1.4rem;border-radius:99px;font-size:1.1rem;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .22s;border:none;display:flex;align-items:center;gap:.5rem;}
 .pca.v{background:var(--r);color:#fff;box-shadow:0 4px 14px rgba(214,40,40,.3);}
@@ -410,7 +411,8 @@ a{text-decoration:none;}
       <form action="" method="POST" style="display:contents;">
         <input type="hidden" name="property_id" value="<?= $fetch_property['id']; ?>">
         <div class="pc-img">
-          <img src="uploaded_files/<?= $fetch_property['image_01']; ?>" alt="<?= htmlspecialchars($fetch_property['property_name']); ?>" class="pc-main-img" id="img_<?= $fetch_property['id']; ?>">
+          <?php $prop_img_src = !empty($fetch_property['image_01']) ? (strpos($fetch_property['image_01'],'http')===0 ? $fetch_property['image_01'] : 'uploaded_files/'.$fetch_property['image_01']) : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80&auto=format'; ?>
+          <img src="<?= $prop_img_src ?>" alt="<?= htmlspecialchars($fetch_property['property_name']); ?>" class="pc-main-img" id="img_<?= $fetch_property['id']; ?>">
           <div class="pc-ov"></div>
           <div class="pc-badge"><i class="far fa-image"></i> <?= $total_images; ?> Photos</div>
           <?php if($total_images > 1): ?>
@@ -445,7 +447,7 @@ a{text-decoration:none;}
           </div>
           <div class="pc-acts">
             <a href="view_property.php?get_id=<?= $fetch_property['id']; ?>" class="pca v"><i class="fas fa-eye"></i> View Details</a>
-            <button type="submit" name="send" class="pca e"><i class="fas fa-phone-alt"></i> Send Enquiry</button>
+            <button type="submit" name="send" class="pca e"><i class="fas fa-paper-plane"></i> Send Enquiry</button>
           </div>
         </div>
       </form>
@@ -498,8 +500,6 @@ window.addEventListener('scroll', () => {
 const navUser = document.querySelector('.nav-user');
 if(navUser){
   const menu = navUser.querySelector('.nav-drop-menu');
-  navUser.addEventListener('mouseenter',()=>menu.classList.add('open'));
-  navUser.addEventListener('mouseleave',()=>menu.classList.remove('open'));
   navUser.addEventListener('click',(e)=>{e.stopPropagation();menu.classList.toggle('open');});
   document.addEventListener('click',()=>menu.classList.remove('open'));
   window.addEventListener('scroll',()=>menu.classList.remove('open'),{passive:true});
@@ -561,7 +561,7 @@ function changeImg(imgId, propId, dir) {
   let idx = cardImages[propId + '_idx'] || 0;
   idx = (idx + dir + imgs.length) % imgs.length;
   cardImages[propId + '_idx'] = idx;
-  document.getElementById(imgId).src = 'uploaded_files/' + imgs[idx];
+  let src = imgs[idx]; document.getElementById(imgId).src = src.startsWith('http') ? src : 'uploaded_files/' + src;
 }
 </script>
 
