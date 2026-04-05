@@ -1,9 +1,9 @@
 <?php  
 include 'components/connect.php';
 
-if(isset($_COOKIE['user_id'])){
-   $user_id = $_COOKIE['user_id'];
-}else{
+$user_id = validate_user_cookie($conn);
+if(!$user_id){
+   setcookie('user_id', '', time() - 3600, '/');
    $user_id = '';
 }
 
@@ -137,8 +137,11 @@ a{text-decoration:none;}
 .vp-gallery .swiper-pagination-bullet-active{background:var(--r);}
 .vp-img-count{position:absolute;top:2rem;right:2rem;background:rgba(0,0,0,.6);backdrop-filter:blur(12px);color:#fff;padding:.6rem 1.4rem;border-radius:99px;font-size:1.2rem;font-weight:700;z-index:10;display:flex;align-items:center;gap:.5rem;}
 
-/* Layout */
-.vp-layout{display:grid;grid-template-columns:1fr 38rem;gap:3.5rem;align-items:start;}
+/* Layout — single full-width column under image */
+.vp-layout{display:block;max-width:120rem;}
+.vp-price-inline{background:var(--white);border-radius:2rem;border:1.5px solid var(--line);padding:2.4rem 2.8rem;margin-bottom:2.5rem;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh);flex-wrap:wrap;gap:1.5rem;}
+.vp-price-inline-left{}
+.vp-price-inline-right{display:flex;gap:1rem;align-items:center;}
 
 /* Main content */
 .vp-main{}
@@ -210,7 +213,7 @@ a{text-decoration:none;}
 .vp-enq-field input,.vp-enq-field textarea{padding:1rem 1.4rem;border:1.5px solid var(--line);border-radius:1.2rem;font-size:1.3rem;font-family:'Outfit',sans-serif;color:var(--ink);background:var(--rp);outline:none;transition:border .2s;}
 .vp-enq-field input:focus,.vp-enq-field textarea:focus{border-color:rgba(214,40,40,.4);background:var(--white);}
 .vp-enq-field.full{grid-column:1/-1;}
-.vp-enq-field textarea{resize:vertical;min-height:10rem;}
+.vp-enq-field textarea{resize:none;min-height:10rem;}
 
 /* Visit booking popup */
 .vp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);z-index:1000;place-items:center;}
@@ -323,7 +326,30 @@ a{text-decoration:none;}
   </div>
 
   <div class="vp-layout">
-    <!-- Main Content -->
+    <!-- Price inline bar -->
+    <div class="vp-price-inline">
+      <div class="vp-price-inline-left">
+        <div class="vp-price-label">Listed Price</div>
+        <div class="vp-price"><?= $price_fmt; ?></div>
+        <?php if($fetch_property['offer'] == 'rent'): ?><div class="vp-price-sub">per month</div><?php else: ?><div class="vp-price-sub">Negotiable</div><?php endif; ?>
+      </div>
+      <div class="vp-price-inline-right">
+        <div class="vp-owner" style="margin-bottom:0;">
+          <div class="vp-owner-av"><?= strtoupper(substr($fetch_user['name'], 0, 1)); ?></div>
+          <div>
+            <div class="vp-owner-name"><?= htmlspecialchars($fetch_user['name']); ?></div>
+            <div class="vp-owner-role">Property Owner</div>
+          </div>
+        </div>
+        <form action="" method="POST" style="display:contents;">
+          <input type="hidden" name="property_id" value="<?= $property_id; ?>">
+          <button type="submit" name="save" class="vp-btn <?= $is_saved ? 'saved' : 'secondary'; ?>" style="width:auto;padding:1.2rem 2rem;"><i class="fas fa-heart"></i> <?= $is_saved ? 'Saved' : 'Save'; ?></button>
+        </form>
+        <button type="button" class="vp-btn primary" id="bookVisitBtn" style="width:auto;padding:1.2rem 2rem;"><i class="fas fa-calendar-check"></i> Book Visit</button>
+        <a href="#enquiry" class="vp-btn secondary" style="width:auto;padding:1.2rem 2rem;"><i class="fas fa-paper-plane"></i> Enquire</a>
+      </div>
+    </div>
+    <!-- Main Content full width -->
     <div class="vp-main">
       <div class="vp-header">
         <div class="vp-breadcrumb"><a href="home.php">Home</a> <i class="fas fa-chevron-right" style="font-size:.8rem;"></i> <a href="listings.php">Properties</a> <i class="fas fa-chevron-right" style="font-size:.8rem;"></i> <span><?= htmlspecialchars($fetch_property['property_name']); ?></span></div>
@@ -421,41 +447,7 @@ a{text-decoration:none;}
           <button type="submit" name="send" class="vp-btn primary" style="width:100%;"><i class="fas fa-paper-plane"></i> Send Enquiry</button>
         </form>
       </div>
-    </div>
-
-    <!-- Sidebar -->
-    <div class="vp-sidebar">
-      <div class="vp-price-card">
-        <div class="vp-price-label">Listed Price</div>
-        <div class="vp-price"><?= $price_fmt; ?></div>
-        <?php if($fetch_property['offer'] == 'rent'): ?><div class="vp-price-sub">per month</div><?php else: ?><div class="vp-price-sub">Negotiable</div><?php endif; ?>
-
-        <div class="vp-owner">
-          <div class="vp-owner-av"><?= strtoupper(substr($fetch_user['name'], 0, 1)); ?></div>
-          <div>
-            <div class="vp-owner-name"><?= htmlspecialchars($fetch_user['name']); ?></div>
-            <div class="vp-owner-role">Property Owner</div>
-          </div>
-        </div>
-
-        <?php if(!empty($fetch_user['number'])): ?>
-        <div style="display:flex;align-items:center;gap:.8rem;padding:1rem 1.4rem;background:var(--bg);border-radius:1.2rem;margin-bottom:2rem;font-size:1.3rem;">
-          <i class="fas fa-phone-alt" style="color:var(--r);"></i>
-          <a href="tel:<?= $fetch_user['number']; ?>" style="color:var(--ink);font-weight:700;text-decoration:none;"><?= $fetch_user['number']; ?></a>
-        </div>
-        <?php endif; ?>
-
-        <div class="vp-actions">
-          <form action="" method="POST" style="display:contents;">
-            <input type="hidden" name="property_id" value="<?= $property_id; ?>">
-            <button type="submit" name="save" class="vp-btn <?= $is_saved ? 'saved' : 'secondary'; ?>"><i class="fas fa-heart"></i> <?= $is_saved ? 'Saved' : 'Save Property'; ?></button>
-          </form>
-          <button type="button" class="vp-btn primary" id="bookVisitBtn"><i class="fas fa-calendar-check"></i> Book Visit</button>
-          <a href="#enquiry" class="vp-btn secondary"><i class="fas fa-paper-plane"></i> Send Enquiry</a>
-          <a href="tel:<?= !empty($fetch_user['number']) ? $fetch_user['number'] : ''; ?>" class="vp-btn outline"><i class="fas fa-phone-alt"></i> Call Owner</a>
-        </div>
-      </div>
-    </div>
+    </div><!-- end vp-main -->
   </div>
 </section>
 
@@ -501,9 +493,8 @@ a{text-decoration:none;}
     </div>
     <div class="foot-col">
       <h4>Contact Us</h4>
-      <div class="fci"><div class="fci-ic"><i class="fas fa-map-marker-alt"></i></div><div class="fci-t"><strong>Office</strong>Bandra West, Mumbai — 400050</div></div>
-      <div class="fci"><div class="fci-ic"><i class="fas fa-phone-alt"></i></div><div class="fci-t"><strong>Phone</strong>+91 98765 43210</div></div>
-      <div class="fci"><div class="fci-ic"><i class="fas fa-envelope"></i></div><div class="fci-t"><strong>Email</strong>hello@myestate.in</div></div>
+      <div class="fci"><div class="fci-ic"><i class="fas fa-map-marker-alt"></i></div><div class="fci-t"><strong>Office</strong>Nalasopara West, Maharashtra — 401203</div></div>
+      <div class="fci"><div class="fci-ic"><i class="fas fa-envelope"></i></div><div class="fci-t"><strong>Email</strong>rayyanbhagate@gmail.com</div></div>
     </div>
   </div>
   <div class="foot-bot">
@@ -528,17 +519,14 @@ window.addEventListener('scroll', function(){
   document.getElementById('mainNav').classList.toggle('scrolled', window.scrollY > 40);
 });
 
-// Profile dropdown (click-based)
+// Profile dropdown — click to open, click outside to close
 var navUser = document.getElementById('navUser');
 if(navUser){
-  navUser.addEventListener('click', function(e){
-    e.stopPropagation();
-    this.querySelector('.nav-drop-menu').classList.toggle('open');
-  });
-  document.addEventListener('click', function(e){
-    var m = navUser.querySelector('.nav-drop-menu');
-    if(m && !navUser.contains(e.target)) m.classList.remove('open');
-  });
+  var navMenu = navUser.querySelector('.nav-drop-menu');
+  navUser.addEventListener('click', function(e){ e.stopPropagation(); navMenu.classList.toggle('open'); });
+  navMenu.addEventListener('click', function(e){ e.stopPropagation(); });
+  document.addEventListener('click', function(e){ if(!navUser.contains(e.target)) navMenu.classList.remove('open'); });
+  window.addEventListener('scroll', function(){ navMenu.classList.remove('open'); }, {passive:true});
 }
 
 // Book Visit popup

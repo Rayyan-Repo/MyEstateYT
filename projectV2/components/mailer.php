@@ -127,4 +127,50 @@ function getWelcomeEmailTemplate($name) {
 </body>
 </html>';
 }
+
+function getBookingEmailTemplate($name, $property, $visit_date, $time_slot, $purpose) {
+    $formatted_date = date('d M Y', strtotime($visit_date));
+    return '<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<style>
+  body{margin:0;padding:0;font-family:\'Outfit\',Arial,sans-serif;background:#faf5f5;}
+  .wrap{max-width:560px;margin:40px auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(214,40,40,0.12);}
+  .header{background:linear-gradient(135deg,#d62828,#9e1c1c);padding:40px 40px 32px;text-align:center;}
+  .logo{font-size:28px;font-weight:700;color:#fff;letter-spacing:-0.02em;}
+  .icon-wrap{width:72px;height:72px;background:rgba(255,255,255,.15);border-radius:50%;margin:20px auto 0;display:flex;align-items:center;justify-content:center;font-size:32px;}
+  .body{padding:40px;}
+  .hi{font-size:22px;font-weight:700;color:#1a0505;margin-bottom:8px;}
+  .msg{font-size:15px;color:#9a6565;line-height:1.7;margin-bottom:28px;}
+  .details-box{background:#fdf1f1;border-radius:16px;padding:24px;margin-bottom:28px;}
+  .det-title{font-size:12px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#9a6565;margin-bottom:16px;}
+  .det-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(214,40,40,0.1);}
+  .det-row:last-child{border:none;}
+  .det-icon{width:36px;height:36px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .det-lbl{font-size:12px;color:#9a6565;margin-bottom:2px;}
+  .det-val{font-size:14px;font-weight:700;color:#1a0505;}
+  .note{font-size:13px;color:#9a6565;background:#faf5f5;border-radius:10px;padding:16px;margin-bottom:24px;line-height:1.65;}
+  .footer{background:#fdf1f1;padding:24px 40px;text-align:center;border-top:1px solid rgba(214,40,40,0.1);}
+  .footer p{font-size:12px;color:#9a6565;margin:0;}
+  .footer span{color:#d62828;font-weight:700;}
+</style></head>
+<body><div class="wrap">
+  <div class="header">
+    <div class="logo">My<span style="color:rgba(255,200,200,0.9);font-style:italic;">Estate</span></div>
+    <div class="icon-wrap">📅</div>
+  </div>
+  <div class="body">
+    <div class="hi">Booking Confirmed, ' . htmlspecialchars($name) . '! ✅</div>
+    <div class="msg">Your site visit has been successfully scheduled. Here are your booking details:</div>
+    <div class="details-box">
+      <div class="det-title">Booking Summary</div>
+      <div class="det-row"><div class="det-icon">🏠</div><div><div class="det-lbl">Property</div><div class="det-val">' . htmlspecialchars($property) . '</div></div></div>
+      <div class="det-row"><div class="det-icon">📅</div><div><div class="det-lbl">Visit Date</div><div class="det-val">' . $formatted_date . '</div></div></div>
+      <div class="det-row"><div class="det-icon">⏰</div><div><div class="det-lbl">Time Slot</div><div class="det-val">' . htmlspecialchars($time_slot) . '</div></div></div>
+      <div class="det-row"><div class="det-icon">🎯</div><div><div class="det-lbl">Purpose</div><div class="det-val">' . htmlspecialchars($purpose) . '</div></div></div>
+    </div>
+    <div class="note">📋 Please arrive 5 minutes before your scheduled time. You can view or cancel this booking from your <strong>My Requests</strong> page on MyEstate.</div>
+  </div>
+  <div class="footer"><p>© 2026 <span>MyEstate</span>. Made with ♥ in Mumbai.</p></div>
+</div></body></html>';
+}
 ?>

@@ -2,11 +2,10 @@
 
 include '../components/connect.php';
 
-if(isset($_COOKIE['admin_id'])){
-   $admin_id = $_COOKIE['admin_id'];
-}else{
-   $admin_id = '';
+$admin_id = validate_admin_cookie($conn);
+if(!$admin_id){
    header('location:login.php');
+   exit();
 }
 
 $select_profile = $conn->prepare("SELECT * FROM `admins` WHERE id = ? LIMIT 1");

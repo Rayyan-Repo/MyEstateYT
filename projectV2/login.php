@@ -5,9 +5,12 @@ if(isset($_GET['redirect'])){
 }
 include 'components/connect.php';
 
-if(isset($_COOKIE['user_id'])){
-   header('location:home.php');
-   exit();
+if(isset($_SESSION['user_id']) || isset($_COOKIE['user_id'])){
+   $valid = validate_user_cookie($conn);
+   if($valid){
+      header('location:home.php');
+      exit();
+   }
 }
 
 if(isset($_POST['submit'])){
@@ -22,6 +25,7 @@ if(isset($_POST['submit'])){
       $row = $sel->fetch(PDO::FETCH_ASSOC);
 
       if($sel->rowCount() > 0){
+         $_SESSION['user_id'] = $row['id'];
          setcookie('user_id', $row['id'], time() + 60*60*24*30, '/');
          if(isset($_SESSION['redirect_after_login'])){
             $redirect = $_SESSION['redirect_after_login'];

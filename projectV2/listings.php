@@ -238,7 +238,7 @@ a{text-decoration:none;}
         <div class="nd-sep"></div>
         <a href="update.php" class="nd-item"><i class="fas fa-user-edit"></i>Edit Profile</a>
         <div class="nd-sep"></div>
-        <a href="components/user_logout.php" class="nd-item nd-danger" onclick="return confirm('Logout from this website?');"><i class="fas fa-sign-out-alt"></i>Logout</a>
+        <a href="javascript:void(0)" onclick="confirmLogout()" class="nd-item nd-danger"><i class="fas fa-sign-out-alt"></i>Logout</a>
       </div>
     </div>
     <?php }else{ ?>
@@ -281,12 +281,39 @@ a{text-decoration:none;}
 
 <!-- FILTER BAR -->
 <section style="max-width:130rem;margin:0 auto;padding:2rem 6% 0;">
-  <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+  <!-- TYPE FILTER -->
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem;">
     <a href="listings.php" class="filter-tab <?= !isset($_GET['type']) || empty($_GET['type']) ? 'active' : ''; ?>">All Properties</a>
-    <a href="listings.php?type=apartment" class="filter-tab <?= (isset($_GET['type']) && $_GET['type'] == 'apartment') ? 'active' : ''; ?>">Apartments</a>
-    <a href="listings.php?type=villa" class="filter-tab <?= (isset($_GET['type']) && $_GET['type'] == 'villa') ? 'active' : ''; ?>">Villas</a>
-    <a href="listings.php?type=plot" class="filter-tab <?= (isset($_GET['type']) && $_GET['type'] == 'plot') ? 'active' : ''; ?>">Plots</a>
-    <a href="listings.php?type=commercial" class="filter-tab <?= (isset($_GET['type']) && $_GET['type'] == 'commercial') ? 'active' : ''; ?>">Commercial</a>
+    <a href="listings.php?type=apartment<?= isset($_GET['neighbourhood'])?'&neighbourhood='.urlencode($_GET['neighbourhood']):'' ?>" class="filter-tab <?= (isset($_GET['type']) && $_GET['type'] == 'apartment') ? 'active' : ''; ?>">Apartments</a>
+    <a href="listings.php?type=villa<?= isset($_GET['neighbourhood'])?'&neighbourhood='.urlencode($_GET['neighbourhood']):'' ?>" class="filter-tab <?= (isset($_GET['type']) && $_GET['type'] == 'villa') ? 'active' : ''; ?>">Villas</a>
+    <a href="listings.php?type=plot<?= isset($_GET['neighbourhood'])?'&neighbourhood='.urlencode($_GET['neighbourhood']):'' ?>" class="filter-tab <?= (isset($_GET['type']) && $_GET['type'] == 'plot') ? 'active' : ''; ?>">Plots</a>
+    <a href="listings.php?type=commercial<?= isset($_GET['neighbourhood'])?'&neighbourhood='.urlencode($_GET['neighbourhood']):'' ?>" class="filter-tab <?= (isset($_GET['type']) && $_GET['type'] == 'commercial') ? 'active' : ''; ?>">Commercial</a>
+  </div>
+  <!-- NEIGHBOURHOOD FILTER -->
+  <div style="display:flex;gap:.8rem;flex-wrap:wrap;align-items:center;margin-bottom:1.4rem;">
+    <span style="font-size:1.2rem;font-weight:700;color:var(--ink3);margin-right:.4rem;"><i class="fas fa-map-marker-alt" style="color:var(--r);"></i> Area:</span>
+    <a href="listings.php<?= isset($_GET['type'])?'?type='.urlencode($_GET['type']):''; ?>" style="padding:.6rem 1.6rem;border-radius:99px;font-size:1.2rem;font-weight:700;transition:all .22s;border:1.5px solid var(--line);background:<?= !isset($_GET['neighbourhood'])||empty($_GET['neighbourhood'])?'var(--r)':'var(--white)' ?>;color:<?= !isset($_GET['neighbourhood'])||empty($_GET['neighbourhood'])?'#fff':'var(--ink3)' ?>;text-decoration:none;">All Areas</a>
+    <?php
+    $nbhds = ['Bandra West','Andheri West','Borivali West'];
+    foreach($nbhds as $nb):
+      $active_nb = (isset($_GET['neighbourhood']) && $_GET['neighbourhood'] == $nb);
+      // Count properties in this neighbourhood
+      $nb_count_q = $conn->prepare("SELECT COUNT(*) FROM property WHERE neighbourhood = ? OR address LIKE ?");
+      $nb_count_q->execute([$nb, '%'.explode(' ',$nb)[0].'%']);
+      $nb_count = $nb_count_q->fetchColumn();
+      $nb_href = '?' . http_build_query(array_filter(['type'=>$_GET['type']??'','neighbourhood'=>$nb]));
+    ?>
+    <a href="<?= $nb_href ?>" style="padding:.6rem 1.6rem;border-radius:99px;font-size:1.2rem;font-weight:700;transition:all .22s;border:1.5px solid <?= $active_nb?'var(--r)':'var(--line)' ?>;background:<?= $active_nb?'var(--rp)':'var(--white)' ?>;color:<?= $active_nb?'var(--r)':'var(--ink3)' ?>;text-decoration:none;"><?= $nb ?> <span style="font-size:1rem;opacity:.65;">(<?= $nb_count ?>)</span></a>
+    <?php endforeach; ?>
+  </div>
+  <!-- SEARCH BOX WITH LIVE SUGGESTIONS -->
+  <div style="position:relative;max-width:60rem;margin-bottom:2rem;">
+    <div style="display:flex;align-items:center;gap:1rem;background:var(--white);border:1.5px solid var(--line);border-radius:1.4rem;padding:1.1rem 1.8rem;box-shadow:var(--sh);transition:border-color .2s;" id="srchBox">
+      <i class="fas fa-search" style="color:var(--ink3);font-size:1.4rem;"></i>
+      <input type="text" id="srchInput" placeholder="Search by name, area, type..." value="<?= htmlspecialchars($_GET['q'] ?? '') ?>" style="border:none;outline:none;font-size:1.4rem;font-family:'Outfit',sans-serif;color:var(--ink);background:transparent;width:100%;" autocomplete="off">
+      <button onclick="doSearch()" style="background:var(--r);color:#fff;border:none;border-radius:.9rem;padding:.7rem 1.8rem;font-size:1.3rem;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><i class="fas fa-arrow-right"></i></button>
+    </div>
+    <div id="srchSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--white);border:1.5px solid var(--line);border-radius:1.4rem;box-shadow:0 16px 40px rgba(214,40,40,.12);z-index:500;overflow:hidden;margin-top:.5rem;"></div>
   </div>
 </section>
 
@@ -298,6 +325,12 @@ a{text-decoration:none;}
        $search_where = [];
        $search_params = [];
 
+       // Keyword search (LIKE)
+       if(isset($_GET['q']) && !empty(trim($_GET['q']))){
+          $kw = '%'.trim($_GET['q']).'%';
+          $search_where[] = "(property_name LIKE ? OR address LIKE ? OR type LIKE ?)";
+          $search_params[] = $kw; $search_params[] = $kw; $search_params[] = $kw;
+       }
        if(isset($_GET['location']) && !empty($_GET['location'])){
           $search_where[] = "address LIKE ?";
           $search_params[] = '%' . $_GET['location'] . '%';
@@ -313,6 +346,14 @@ a{text-decoration:none;}
              $search_params[] = $budget_parts[0];
              $search_params[] = $budget_parts[1];
           }
+       }
+       // Neighbourhood filter
+       if(isset($_GET['neighbourhood']) && !empty($_GET['neighbourhood'])){
+          $nb_val = trim($_GET['neighbourhood']);
+          $nb_key = explode(' ', $nb_val)[0]; // e.g. 'Bandra'
+          $search_where[] = "(neighbourhood = ? OR address LIKE ?)";
+          $search_params[] = $nb_val;
+          $search_params[] = '%'.$nb_key.'%';
        }
 
        if(!empty($search_where)){
@@ -453,19 +494,58 @@ window.addEventListener('scroll', () => {
   document.getElementById('mainNav').classList.toggle('scrolled', scrollY > 40);
 });
 
-// Profile dropdown toggle
+// Profile dropdown — hover + click + scroll close
 const navUser = document.querySelector('.nav-user');
 if(navUser){
-  navUser.addEventListener('click', function(e){
-    e.stopPropagation();
-    const menu = this.querySelector('.nav-drop-menu');
-    menu.classList.toggle('open');
+  const menu = navUser.querySelector('.nav-drop-menu');
+  navUser.addEventListener('mouseenter',()=>menu.classList.add('open'));
+  navUser.addEventListener('mouseleave',()=>menu.classList.remove('open'));
+  navUser.addEventListener('click',(e)=>{e.stopPropagation();menu.classList.toggle('open');});
+  document.addEventListener('click',()=>menu.classList.remove('open'));
+  window.addEventListener('scroll',()=>menu.classList.remove('open'),{passive:true});
+}
+
+// Logout confirmation
+function confirmLogout(){
+  swal({title:'Logout?',text:'Are you sure you want to logout?',icon:'warning',
+    buttons:['Cancel','Logout'],dangerMode:true})
+  .then(ok=>{if(ok)window.location='components/user_logout.php';});
+}
+
+// AJAX live search suggestions
+const srchInput = document.getElementById('srchInput');
+let srchTimer;
+if(srchInput){
+  srchInput.addEventListener('input',function(){
+    clearTimeout(srchTimer);
+    const q=this.value.trim();
+    const box=document.getElementById('srchSuggestions');
+    if(q.length<2){box.style.display='none';return;}
+    srchTimer=setTimeout(()=>{
+      fetch('ajax/search_suggest.php?q='+encodeURIComponent(q))
+        .then(r=>r.json()).then(data=>{
+          if(!data.length){box.style.display='none';return;}
+          box.innerHTML=data.map(p=>{
+            const priceFmt=p.price>=10000000?'₹'+(p.price/10000000).toFixed(1)+'Cr':p.price>=100000?'₹'+(p.price/100000).toFixed(0)+'L':'₹'+p.price;
+            return `<a href="view_property.php?get_id=${p.id}" style="display:flex;align-items:center;gap:1.2rem;padding:1.2rem 2rem;border-bottom:1px solid var(--line);transition:background .15s;text-decoration:none;" onmouseover="this.style.background='var(--rp)'" onmouseout="this.style.background=''"><div style="width:3.8rem;height:3.8rem;border-radius:1rem;background:var(--rp);display:grid;place-items:center;font-size:1.6rem;color:var(--r);flex-shrink:0;"><i class="fas fa-building"></i></div><div style="flex:1;min-width:0;"><div style="font-size:1.3rem;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.property_name}</div><div style="font-size:1.1rem;color:var(--ink3);">${p.address}</div></div><div style="font-size:1.3rem;font-weight:800;color:var(--r);flex-shrink:0;">${priceFmt}</div></a>`;
+          }).join('');
+          box.style.display='block';
+        }).catch(()=>{});
+    },300);
   });
-  document.addEventListener('click', function(e){
-    const menu = navUser.querySelector('.nav-drop-menu');
-    if(menu && !navUser.contains(e.target)) menu.classList.remove('open');
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('#srchBox')&&!e.target.closest('#srchSuggestions')){
+      document.getElementById('srchSuggestions').style.display='none';
+    }
   });
 }
+function doSearch(){
+  const q=document.getElementById('srchInput')?.value.trim();
+  if(q) window.location='listings.php?q='+encodeURIComponent(q);
+}
+document.getElementById('srchInput')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter') doSearch();
+});
 
 // Image carousel for property cards
 const cardImages = {};

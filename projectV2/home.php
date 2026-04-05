@@ -1,10 +1,9 @@
 <?php
-include 'components/connect.php';
+include 'components/connect.php'; // handles session_start() safely
 
-if(isset($_COOKIE['user_id'])){
-   $user_id = $_COOKIE['user_id'];
-}else{
-   header('location:login.php');
+$user_id = validate_user_cookie($conn);
+if(!$user_id){
+   header('Location: login.php');
    exit();
 }
 
@@ -12,7 +11,7 @@ if(isset($_COOKIE['user_id'])){
 $sel_user = $conn->prepare("SELECT * FROM `users` WHERE id = ? LIMIT 1");
 $sel_user->execute([$user_id]);
 $fetch_user = $sel_user->fetch(PDO::FETCH_ASSOC);
-$user_name = $fetch_user ? $fetch_user['name'] : 'User';
+$user_name    = $fetch_user ? $fetch_user['name'] : 'User';
 $user_initial = strtoupper(substr($user_name, 0, 1));
 
 // Count saved properties
@@ -30,10 +29,10 @@ $sel_users = $conn->prepare("SELECT COUNT(*) as cnt FROM `users`");
 $sel_users->execute();
 $total_users = $sel_users->fetch(PDO::FETCH_ASSOC)['cnt'];
 
-// Real activity data
-$sel_views = $conn->prepare("SELECT COUNT(*) as cnt FROM `property`");
+// Real activity data — NO fake multipliers
+$sel_views = $conn->prepare("SELECT COUNT(*) as cnt FROM `requests`");
 $sel_views->execute();
-$total_views_today = $sel_views->fetch(PDO::FETCH_ASSOC)['cnt'] * 17; // Simulated views
+$total_visits_booked = $sel_views->fetch(PDO::FETCH_ASSOC)['cnt'];
 
 $sel_enquiries = $conn->prepare("SELECT COUNT(*) as cnt FROM `messages`");
 $sel_enquiries->execute();
@@ -78,6 +77,16 @@ while($ru = $sel_recent_users->fetch(PDO::FETCH_ASSOC)){
       'tag' => 'New User', 'time' => 'recently'
    ];
 }
+
+// DYNAMIC LATEST LISTINGS for homepage slider
+$sel_latest = $conn->prepare("SELECT id, property_name, address, price, type, offer, bedroom, bathroom, carpet, furnished, image_01 FROM `property` ORDER BY id DESC LIMIT 6");
+$sel_latest->execute();
+$latest_properties = $sel_latest->fetchAll(PDO::FETCH_ASSOC);
+
+// Property list for booking popup dropdown
+$sel_bk_props = $conn->prepare("SELECT id, property_name, address, price FROM `property` ORDER BY id DESC LIMIT 50");
+$sel_bk_props->execute();
+$booking_properties = $sel_bk_props->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -561,7 +570,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
     <div class="vp-body">
       <div class="vp-panel act" id="vpanel1">
         <div class="vp-row">
-          <div class="vp-f full"><label>Select Property <span>*</span></label><select id="vp-prop"><option value="">Choose the property you want to visit</option><option>Commercial Shop — FC Road, Pune (₹55L)</option><option>Spacious 5BHK Villa — Juhu, Mumbai (₹5.5 Cr)</option><option>Modern 1BHK Studio — Baner, Pune (₹28L)</option><option>3BHK Premium Flat — Andheri West, Mumbai (₹1.8 Cr)</option></select></div>
+          <div class="vp-f full"><label>Select Property <span>*</span></label><select id="vp-prop"><option value="">Choose a property to visit</option><?php foreach($booking_properties as $bp): ?><option value="<?= htmlspecialchars($bp['id']) ?>"><?= htmlspecialchars($bp['property_name']) ?> — <?= htmlspecialchars($bp['address']) ?> (₹<?= htmlspecialchars($bp['price']) ?>)</option><?php endforeach; ?></select></div>
           <div class="vp-f"><label>Preferred Date <span>*</span></label><input type="date" id="vp-date"></div>
           <div class="vp-f"><label>Visit Purpose <span>*</span></label><select id="vp-purpose"><option value="">Select purpose</option><option>Buying</option><option>Renting</option><option>Investment</option><option>Exploring options</option></select></div>
           <div class="vp-f full"><label>Select Time Slot <span>*</span></label>
@@ -569,21 +578,21 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
               <div class="ts" onclick="pickSlot(this)">9:00 AM</div><div class="ts" onclick="pickSlot(this)">10:30 AM</div><div class="ts" onclick="pickSlot(this)">12:00 PM</div><div class="ts na">1:30 PM</div><div class="ts" onclick="pickSlot(this)">3:00 PM</div><div class="ts" onclick="pickSlot(this)">4:30 PM</div><div class="ts na">6:00 PM</div><div class="ts" onclick="pickSlot(this)">7:00 PM</div>
             </div>
           </div>
-          <div class="vp-f full"><label>Special Requirements</label><textarea placeholder="Anything specific you'd like to check during the visit..."></textarea></div>
+          <div class="vp-f full"><label>Special Requirements</label><textarea id="vp-notes" placeholder="Anything specific you'd like to check during the visit..."></textarea></div>
         </div>
         <div class="vp-nav"><button class="vp-fwd" onclick="vpGo(2)">Continue <i class="fas fa-arrow-right"></i></button></div>
       </div>
       <div class="vp-panel" id="vpanel2">
         <div class="vp-row">
-          <div class="vp-f"><label>Full Name <span>*</span></label><input type="text" placeholder="Your full name"></div>
-          <div class="vp-f"><label>Phone Number <span>*</span></label><input type="tel" placeholder="+91 98765 43210"></div>
-          <div class="vp-f"><label>Email Address <span>*</span></label><input type="email" placeholder="you@email.com"></div>
-          <div class="vp-f"><label>Budget Range</label><select><option value="">Select budget</option><option>Under ₹30 Lakh</option><option>₹30L – ₹1 Crore</option><option>₹1Cr – ₹3 Crore</option><option>Above ₹3 Crore</option></select></div>
+          <div class="vp-f"><label>Full Name <span>*</span></label><input type="text" id="vp-name" placeholder="Your full name" value="<?= htmlspecialchars($user_name) ?>"></div>
+          <div class="vp-f"><label>Phone Number <span>*</span></label><input type="tel" id="vp-phone" placeholder="+91 98765 43210"></div>
+          <div class="vp-f"><label>Email Address <span>*</span></label><input type="email" id="vp-email" placeholder="you@email.com" value="<?= htmlspecialchars($fetch_user['email'] ?? '') ?>"></div>
+          <div class="vp-f"><label>Budget Range</label><select id="vp-budget"><option value="">Select budget</option><option>Under ₹30 Lakh</option><option>₹30L – ₹1 Crore</option><option>₹1Cr – ₹3 Crore</option><option>Above ₹3 Crore</option></select></div>
         </div>
         <div class="vp-nav"><button class="vp-back" onclick="vpGo(1)"><i class="fas fa-arrow-left"></i> Back</button><button class="vp-fwd" onclick="vpGo(3)">Confirm Booking <i class="fas fa-check"></i></button></div>
       </div>
       <div class="vp-panel" id="vpanel3">
-        <div class="vp-success"><div class="vp-sicon"><i class="fas fa-calendar-check"></i></div><h3>Visit Confirmed!</h3><p>Your site visit has been scheduled. Our agent will call you within <strong>2 hours</strong> to confirm. Check your email for details.</p><br><button class="vp-fwd" onclick="closePopup('visitPopup')" style="margin:0 auto;display:flex;">Done <i class="fas fa-check"></i></button></div>
+        <div class="vp-success"><div class="vp-sicon"><i class="fas fa-calendar-check"></i></div><h3>Visit Confirmed!</h3><p>Your site visit has been scheduled. A confirmation email has been sent to you. You can track your booking in <strong>My Requests</strong>.</p><br><div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;"><a href="requests.php" class="vp-fwd" style="text-decoration:none;display:flex;"><i class="fas fa-list-alt"></i> View Bookings</a><button class="vp-back" onclick="closePopup('visitPopup')" style="margin:0;">Close</button></div></div>
       </div>
     </div>
   </div>
@@ -619,14 +628,16 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
       </div>
       <div class="ap-panel" id="apanel3">
         <div class="ap-row">
-          <div class="ap-field full"><label>Government ID <span>*</span></label><div class="ap-upload"><i class="fas fa-cloud-upload-alt"></i><div class="ap-upload-text">Click to upload or drag & drop</div><div class="ap-upload-sub">PDF, JPG or PNG — max 5MB</div></div></div>
-          <div class="ap-field full"><label>RERA Certificate (optional)</label><div class="ap-upload"><i class="fas fa-file-certificate"></i><div class="ap-upload-text">Upload your RERA certificate</div><div class="ap-upload-sub">PDF — max 5MB</div></div></div>
+          <div class="ap-field"><label>ID Type <span>*</span></label><select id="ap-id-type"><option value="">Select ID type</option><option>Aadhaar Card</option><option>PAN Card</option><option>Passport</option><option>Driving License</option></select></div>
+          <div class="ap-field"><label>ID Number <span>*</span></label><input type="text" id="ap-id-num" placeholder="Enter your ID number"></div>
+          <div class="ap-field"><label>RERA Number</label><input type="text" id="ap-rera" placeholder="RERA registration (if applicable)"></div>
+          <div class="ap-field"><label>Years Active in Real Estate <span>*</span></label><select id="ap-active-yrs"><option value="">Select</option><option>Less than 1 year</option><option>1–3 years</option><option>3–5 years</option><option>5–10 years</option><option>10+ years</option></select></div>
         </div>
         <div class="ap-terms"><input type="checkbox" id="apTerms"><label for="apTerms">I confirm all information is accurate. I understand that listing properties requires admin approval after agent verification. I accept MyEstate's agent code of conduct.</label></div>
         <div class="ap-nav"><button class="ap-back" onclick="apGo(2)"><i class="fas fa-arrow-left"></i> Back</button><button class="ap-next" onclick="submitAgent()"><i class="fas fa-paper-plane"></i> Submit Application</button></div>
       </div>
       <div class="ap-panel" id="apanel4">
-        <div class="ap-success"><div class="ap-success-icon"><i class="fas fa-user-check"></i></div><h3>Application Submitted</h3><p>Our team will personally review your profile within <strong>3 working days</strong>. You'll receive an email with next steps.</p><br><button class="ap-next" onclick="closePopup('agentPopup')" style="margin:0 auto;display:flex;">Done <i class="fas fa-check"></i></button></div>
+        <div class="ap-success" id="ap-success-msg"></div>
       </div>
     </div>
   </div>
@@ -634,14 +645,14 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 <!-- NAV -->
 <nav class="nav" id="mainNav">
   <a href="home.php" class="logo">My<span>Estate</span></a>
-  <div class="nav-center"><a href="home.php" class="active">Home</a><a href="listings.php">Properties</a><a href="#upSec">Upcoming</a><a href="about.php">About</a><a href="contact.php">Contact</a></div>
+  <div class="nav-center"><a href="home.php" class="active">Home</a><a href="listings.php">Properties</a><a href="upcoming.php">Upcoming</a><a href="about.php">About</a><a href="contact.php">Contact</a></div>
   <div class="nav-right">
     <a href="saved.php" class="nav-icon"><i class="fas fa-heart"></i><?php if($saved_count > 0): ?><span class="nav-badge"><?= $saved_count; ?></span><?php endif; ?></a>
-    <div class="nav-user">
+    <div class="nav-user" id="navUser">
       <div class="nav-av"><?= $user_initial; ?></div>
       <span style="font-size:1.3rem;font-weight:700;color:var(--ink);"><?= htmlspecialchars($user_name); ?></span>
       <i class="fas fa-chevron-down" style="font-size:1rem;color:var(--ink3);margin-left:.4rem;"></i>
-      <div class="nav-drop-menu">
+      <div class="nav-drop-menu" id="navDrop">
         <a href="saved.php" class="nd-item"><i class="fas fa-heart"></i>Saved Properties</a>
         <a href="requests.php" class="nd-item"><i class="fas fa-file-alt"></i>My Requests</a>
         <div class="nd-sep"></div>
@@ -649,7 +660,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
         <div class="nd-sep"></div>
         <a href="update.php" class="nd-item"><i class="fas fa-user-edit"></i>Edit Profile</a>
         <div class="nd-sep"></div>
-        <a href="components/user_logout.php" class="nd-item nd-danger"><i class="fas fa-sign-out-alt"></i>Logout</a>
+        <a href="logout.php" class="nd-item nd-danger"><i class="fas fa-sign-out-alt"></i>Logout</a>
       </div>
     </div>
   </div>
@@ -702,30 +713,70 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 </div>
 <!-- LISTINGS -->
 <section class="lst-sec">
-  <div class="sec-hd reveal"><div><div class="eyebrow">New Arrivals</div><h2 class="sec-title">Latest <em>Listings</em></h2><p class="sec-sub">Fresh verified properties this week across Mumbai & Pune.</p></div><a href="listings.php" class="btn-ol">View All <i class="fas fa-arrow-right"></i></a></div>
-  <div class="lst-grid">
-    <div class="lc big reveal">
-      <div class="lc-img" style="height:38rem;cursor:pointer;" onclick="window.location='view_property.php?get_id=2'"><img src="https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?w=1200&q=88&auto=format" alt="Villa"><div class="lc-ov"></div><div class="lc-badge"><i class="fas fa-fire"></i> Featured</div><button class="lc-save" onclick="event.stopPropagation()"><i class="fas fa-heart"></i></button><div class="lc-price-tag"><span>₹5.5 Cr</span></div></div>
-      <div class="lc-body"><div class="lc-type">Villa • For Sale</div><div class="lc-name">Spacious 5BHK Villa</div><div class="lc-addr"><i class="fas fa-map-marker-alt"></i> Juhu, Mumbai</div><div class="lc-pills"><div class="lc-pill"><i class="fas fa-bed"></i> 5 BHK</div><div class="lc-pill"><i class="fas fa-bath"></i> 5 Bath</div><div class="lc-pill"><i class="fas fa-ruler-combined"></i> 5500 sqft</div><div class="lc-pill"><i class="fas fa-couch"></i> Furnished</div></div><div class="lc-acts"><a href="view_property.php?get_id=2" class="lca v"><i class="fas fa-eye"></i> View</a><button class="lca b" onclick="openPopup('visitPopup')"><i class="fas fa-calendar-check"></i> Book Visit</button><a href="view_property.php?id=2#enquiry" class="lca e"><i class="fas fa-phone-alt"></i> Enquire</a></div></div>
+  <div class="sec-hd reveal"><div><div class="eyebrow">New Arrivals</div><h2 class="sec-title">Latest <em>Listings</em></h2><p class="sec-sub">Fresh verified properties — live from our database.</p></div><a href="listings.php" class="btn-ol">View All <i class="fas fa-arrow-right"></i></a></div>
+  <?php if(empty($latest_properties)): ?>
+  <div style="text-align:center;padding:6rem 2rem;background:var(--rp);border-radius:2.4rem;">
+    <i class="fas fa-building" style="font-size:5rem;color:rgba(214,40,40,.2);display:block;margin-bottom:1.6rem;"></i>
+    <p style="font-size:1.5rem;color:var(--ink3);">No properties listed yet. <a href="post_property.php" style="color:var(--r);font-weight:700;">Post the first one</a>.</p>
+  </div>
+  <?php else: ?>
+  <div class="lst-grid" id="lstSlider">
+  <?php foreach($latest_properties as $pi => $lp):
+    $lp_img = !empty($lp['image_01']) ? 'uploaded_files/'.htmlspecialchars($lp['image_01']) : 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80&auto=format';
+    $lp_price = '₹'.htmlspecialchars($lp['price']);
+  ?>
+  <div class="lc <?= $pi===0?'big':'side' ?> reveal" style="transition-delay:<?= $pi*0.07 ?>s;<?= $pi>2?'display:none;':'' ?>" data-idx="<?= $pi ?>">
+    <div class="lc-img" style="<?= $pi===0?'height:38rem;':'' ?>cursor:pointer;" onclick="window.location='view_property.php?get_id=<?= htmlspecialchars($lp['id']) ?>'">
+      <img src="<?= $lp_img ?>" alt="<?= htmlspecialchars($lp['property_name']) ?>" loading="lazy">
+      <div class="lc-ov"></div>
+      <?php if($pi===0): ?><div class="lc-badge"><i class="fas fa-fire"></i> Featured</div><?php endif; ?>
+      <button class="lc-save" onclick="event.stopPropagation();toggleSave(this,'<?= htmlspecialchars($lp['id']) ?>')"><i class="fas fa-heart"></i></button>
+      <div class="lc-price-tag"><span><?= $lp_price ?></span></div>
     </div>
-    <div class="lc side reveal" style="transition-delay:.08s">
-      <div class="lc-img" style="cursor:pointer;" onclick="window.location='view_property.php?get_id=1'"><img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=85&auto=format" alt="Shop"><div class="lc-ov"></div><button class="lc-save" onclick="event.stopPropagation()"><i class="fas fa-heart"></i></button><div class="lc-price-tag"><span>₹55 L</span></div></div>
-      <div class="lc-body"><div class="lc-type">Commercial • Sale</div><div class="lc-name">Commercial Shop</div><div class="lc-addr"><i class="fas fa-map-marker-alt"></i> FC Road, Pune</div><div class="lc-pills"><div class="lc-pill"><i class="fas fa-ruler-combined"></i> 450 sqft</div><div class="lc-pill"><i class="fas fa-bolt"></i> New</div></div><div class="lc-acts"><a href="view_property.php?get_id=1" class="lca v"><i class="fas fa-eye"></i> View</a><button class="lca b" onclick="openPopup('visitPopup')"><i class="fas fa-calendar-check"></i> Visit</button></div></div>
-    </div>
-    <div class="lc side reveal" style="transition-delay:.14s">
-      <div class="lc-img" style="cursor:pointer;" onclick="window.location='view_property.php?get_id=3'"><img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=85&auto=format" alt="Studio"><div class="lc-ov"></div><button class="lc-save saved" onclick="event.stopPropagation()"><i class="fas fa-heart"></i></button><div class="lc-price-tag"><span>₹28 L</span></div></div>
-      <div class="lc-body"><div class="lc-type">Apartment • Sale</div><div class="lc-name">Modern 1BHK Studio</div><div class="lc-addr"><i class="fas fa-map-marker-alt"></i> Baner, Pune</div><div class="lc-pills"><div class="lc-pill"><i class="fas fa-bed"></i> 1 BHK</div><div class="lc-pill"><i class="fas fa-ruler-combined"></i> 550 sqft</div></div><div class="lc-acts"><a href="view_property.php?get_id=3" class="lca v"><i class="fas fa-eye"></i> View</a><button class="lca b" onclick="openPopup('visitPopup')"><i class="fas fa-calendar-check"></i> Visit</button></div></div>
+    <div class="lc-body">
+      <div class="lc-type"><?= htmlspecialchars(ucfirst($lp['type'])) ?> • <?= htmlspecialchars(ucfirst($lp['offer']??'Sale')) ?></div>
+      <div class="lc-name"><?= htmlspecialchars($lp['property_name']) ?></div>
+      <div class="lc-addr"><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($lp['address']) ?></div>
+      <div class="lc-pills">
+        <?php if(!empty($lp['bedroom'])): ?><div class="lc-pill"><i class="fas fa-bed"></i> <?= htmlspecialchars($lp['bedroom']) ?> Bed</div><?php endif; ?>
+        <?php if(!empty($lp['bathroom'])): ?><div class="lc-pill"><i class="fas fa-bath"></i> <?= htmlspecialchars($lp['bathroom']) ?> Bath</div><?php endif; ?>
+        <?php if(!empty($lp['carpet'])): ?><div class="lc-pill"><i class="fas fa-ruler-combined"></i> <?= htmlspecialchars($lp['carpet']) ?> sqft</div><?php endif; ?>
+        <?php if(!empty($lp['furnished'])&&$lp['furnished']==='yes'): ?><div class="lc-pill"><i class="fas fa-couch"></i> Furnished</div><?php endif; ?>
+      </div>
+      <div class="lc-acts">
+        <a href="view_property.php?get_id=<?= htmlspecialchars($lp['id']) ?>" class="lca v"><i class="fas fa-eye"></i> View</a>
+        <button class="lca b" onclick="openPopup('visitPopup')"><i class="fas fa-calendar-check"></i> Book Visit</button>
+        <a href="view_property.php?get_id=<?= htmlspecialchars($lp['id']) ?>#enquiry" class="lca e"><i class="fas fa-paper-plane"></i> Enquire</a>
+      </div>
     </div>
   </div>
+  <?php endforeach; ?>
+  </div>
+  <?php if(count($latest_properties)>3): ?>
+  <div style="display:flex;justify-content:center;gap:1.2rem;margin-top:3rem;">
+    <button onclick="sliderNav(-1)" style="width:4.8rem;height:4.8rem;border-radius:50%;border:1.5px solid var(--line);background:var(--white);font-size:1.6rem;color:var(--ink3);cursor:pointer;transition:all .22s;" onmouseover="this.style.borderColor='var(--r)';this.style.color='var(--r)';" onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--ink3)';" id="slPrev"><i class="fas fa-arrow-left"></i></button>
+    <button onclick="sliderNav(1)"  style="width:4.8rem;height:4.8rem;border-radius:50%;border:1.5px solid var(--line);background:var(--r);font-size:1.6rem;color:#fff;cursor:pointer;transition:all .22s;box-shadow:0 4px 16px rgba(214,40,40,.28);" id="slNext"><i class="fas fa-arrow-right"></i></button>
+  </div>
+  <?php endif; ?>
+  <?php endif; ?>
 </section>
 <!-- EXPLORE BY TYPE -->
 <section class="expl-sec">
   <div class="sec-hd reveal"><div><div class="eyebrow">Browse</div><h2 class="sec-title">Explore by <em>Type</em></h2><p class="sec-sub">Every category verified, every listing real.</p></div><a href="listings.php" class="btn-ol">All Listings <i class="fas fa-arrow-right"></i></a></div>
   <div class="cat-track" id="catTrack">
-    <div class="ct tall reveal" onclick="location='listings.php?type=apartment'"><div class="ct-img-wrap"><img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=700&q=88&auto=format" alt=""></div><div class="ct-ov"><div class="ct-ov-a"></div><div class="ct-ov-b"></div></div><div class="ct-num">01</div><div class="ct-body"><div class="ct-icon"><i class="fas fa-building"></i></div><div class="ct-name">Apartments</div><div class="ct-count"><i class="fas fa-home"></i> 4 listings</div><div class="ct-pill"><i class="fas fa-arrow-right"></i> Browse</div></div></div>
-    <div class="ct mid reveal" style="transition-delay:.07s" onclick="location='listings.php?type=villa'"><div class="ct-img-wrap"><img src="https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?w=700&q=88&auto=format" alt=""></div><div class="ct-ov"><div class="ct-ov-a"></div><div class="ct-ov-b"></div></div><div class="ct-num">02</div><div class="ct-body"><div class="ct-icon"><i class="fas fa-home"></i></div><div class="ct-name">Villas</div><div class="ct-count"><i class="fas fa-home"></i> 2 listings</div><div class="ct-pill"><i class="fas fa-arrow-right"></i> Browse</div></div></div>
-    <div class="ct short reveal" style="transition-delay:.14s" onclick="location='listings.php?type=plot'"><div class="ct-img-wrap"><img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=700&q=88&auto=format" alt=""></div><div class="ct-ov"><div class="ct-ov-a"></div><div class="ct-ov-b"></div></div><div class="ct-num">03</div><div class="ct-body"><div class="ct-icon"><i class="fas fa-vector-square"></i></div><div class="ct-name">Plots</div><div class="ct-count"><i class="fas fa-home"></i> 1 listing</div><div class="ct-pill"><i class="fas fa-arrow-right"></i> Browse</div></div></div>
-    <div class="ct wide reveal" style="transition-delay:.21s" onclick="location='listings.php?type=commercial'"><div class="ct-img-wrap"><img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=900&q=88&auto=format" alt=""></div><div class="ct-ov"><div class="ct-ov-a"></div><div class="ct-ov-b"></div></div><div class="ct-num">04</div><div class="ct-body"><div class="ct-icon"><i class="fas fa-store"></i></div><div class="ct-name">Commercial</div><div class="ct-count"><i class="fas fa-home"></i> 1 listing</div><div class="ct-pill"><i class="fas fa-arrow-right"></i> Browse</div></div></div>
+<?php
+// Real DB counts per type
+$type_cnt = [];
+foreach(['apartment','villa','plot','commercial'] as $tt){
+  $qtt=$conn->prepare("SELECT COUNT(*) FROM property WHERE type=?");
+  $qtt->execute([$tt]);
+  $type_cnt[$tt]=$qtt->fetchColumn();
+}
+?>
+    <div class="ct tall reveal" onclick="location='listings.php?type=apartment'"><div class="ct-img-wrap"><img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=700&q=88&auto=format" alt=""></div><div class="ct-ov"><div class="ct-ov-a"></div><div class="ct-ov-b"></div></div><div class="ct-num">01</div><div class="ct-body"><div class="ct-icon"><i class="fas fa-building"></i></div><div class="ct-name">Apartments</div><div class="ct-count"><i class="fas fa-home"></i> <?= $type_cnt['apartment'] ?> listing<?= $type_cnt['apartment']!=1?'s':'' ?></div><div class="ct-pill"><i class="fas fa-arrow-right"></i> Browse</div></div></div>
+    <div class="ct mid reveal" style="transition-delay:.07s" onclick="location='listings.php?type=villa'"><div class="ct-img-wrap"><img src="https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?w=700&q=88&auto=format" alt=""></div><div class="ct-ov"><div class="ct-ov-a"></div><div class="ct-ov-b"></div></div><div class="ct-num">02</div><div class="ct-body"><div class="ct-icon"><i class="fas fa-home"></i></div><div class="ct-name">Villas</div><div class="ct-count"><i class="fas fa-home"></i> <?= $type_cnt['villa'] ?> listing<?= $type_cnt['villa']!=1?'s':'' ?></div><div class="ct-pill"><i class="fas fa-arrow-right"></i> Browse</div></div></div>
+    <div class="ct short reveal" style="transition-delay:.14s" onclick="location='listings.php?type=plot'"><div class="ct-img-wrap"><img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=700&q=88&auto=format" alt=""></div><div class="ct-ov"><div class="ct-ov-a"></div><div class="ct-ov-b"></div></div><div class="ct-num">03</div><div class="ct-body"><div class="ct-icon"><i class="fas fa-vector-square"></i></div><div class="ct-name">Plots</div><div class="ct-count"><i class="fas fa-home"></i> <?= $type_cnt['plot'] ?> listing<?= $type_cnt['plot']!=1?'s':'' ?></div><div class="ct-pill"><i class="fas fa-arrow-right"></i> Browse</div></div></div>
+    <div class="ct wide reveal" style="transition-delay:.21s" onclick="location='listings.php?type=commercial'"><div class="ct-img-wrap"><img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=900&q=88&auto=format" alt=""></div><div class="ct-ov"><div class="ct-ov-a"></div><div class="ct-ov-b"></div></div><div class="ct-num">04</div><div class="ct-body"><div class="ct-icon"><i class="fas fa-store"></i></div><div class="ct-name">Commercial</div><div class="ct-count"><i class="fas fa-home"></i> <?= $type_cnt['commercial'] ?> listing<?= $type_cnt['commercial']!=1?'s':'' ?></div><div class="ct-pill"><i class="fas fa-arrow-right"></i> Browse</div></div></div>
     <div class="ct sqr reveal" style="transition-delay:.28s" onclick="openPopup('visitPopup')"><div class="ct-img-wrap"><img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=700&q=88&auto=format" alt=""></div><div class="ct-ov"><div class="ct-ov-a"></div><div class="ct-ov-b"></div></div><div class="ct-num">05</div><div class="ct-body"><div class="ct-icon"><i class="fas fa-calendar-check"></i></div><div class="ct-name">Book Visit</div><div class="ct-count"><i class="fas fa-clock"></i> Available today</div><div class="ct-pill"><i class="fas fa-calendar-plus"></i> Schedule</div></div></div>
   </div>
 </section>
@@ -738,10 +789,10 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
       <h2 class="sec-title">Real-Time <em>Activity</em></h2>
       <p class="sec-sub" style="margin-bottom:0;">See what buyers are looking at right now — live enquiries, new saves, fresh listings and scheduled visits happening across the platform.</p>
       <div class="feed-counter-row">
-        <div class="fcount reveal" style="transition-delay:.06s"><div class="fcount-icon"><i class="fas fa-eye"></i></div><div class="fcount-n"><?= $total_listings * 17; ?></div><div class="fcount-l">Property views</div><div class="fcount-delta up"><i class="fas fa-arrow-up"></i> Growing</div></div>
-        <div class="fcount reveal" style="transition-delay:.1s"><div class="fcount-icon"><i class="fas fa-phone-alt"></i></div><div class="fcount-n"><?= $total_enquiries; ?></div><div class="fcount-l">Total enquiries</div><div class="fcount-delta hot"><i class="fas fa-fire"></i> Active</div></div>
-        <div class="fcount reveal" style="transition-delay:.14s"><div class="fcount-icon"><i class="fas fa-calendar-check"></i></div><div class="fcount-n"><?= $total_listings; ?></div><div class="fcount-l">Listed properties</div><div class="fcount-delta up"><i class="fas fa-arrow-up"></i> +<?= $total_listings; ?></div></div>
-        <div class="fcount reveal" style="transition-delay:.18s"><div class="fcount-icon"><i class="fas fa-heart"></i></div><div class="fcount-n"><?= $total_saves; ?></div><div class="fcount-l">Properties saved</div><div class="fcount-delta hot"><i class="fas fa-fire"></i> Trending</div></div>
+        <div class="fcount reveal" style="transition-delay:.06s"><div class="fcount-icon"><i class="fas fa-calendar-check"></i></div><div class="fcount-n"><?= $total_visits_booked; ?></div><div class="fcount-l">Visits Booked</div><div class="fcount-delta up"><i class="fas fa-arrow-up"></i> Growing</div></div>
+        <div class="fcount reveal" style="transition-delay:.1s"><div class="fcount-icon"><i class="fas fa-paper-plane"></i></div><div class="fcount-n"><?= $total_enquiries; ?></div><div class="fcount-l">Open Enquiries</div><div class="fcount-delta hot"><i class="fas fa-fire"></i> Active</div></div>
+        <div class="fcount reveal" style="transition-delay:.14s"><div class="fcount-icon"><i class="fas fa-building"></i></div><div class="fcount-n"><?= $total_listings; ?></div><div class="fcount-l">Listed Properties</div><div class="fcount-delta up"><i class="fas fa-arrow-up"></i> Live Now</div></div>
+        <div class="fcount reveal" style="transition-delay:.18s"><div class="fcount-icon"><i class="fas fa-heart"></i></div><div class="fcount-n"><?= $total_saves; ?></div><div class="fcount-l">Properties Saved</div><div class="fcount-delta hot"><i class="fas fa-fire"></i> Trending</div></div>
       </div>
     </div>
     <div class="reveal" style="transition-delay:.08s">
@@ -785,36 +836,54 @@ while($row = $sel_areas->fetch(PDO::FETCH_ASSOC)){
 ?>
 <!-- NEIGHBOURHOOD EXPLORER -->
 <section class="nbhd-sec" id="nbhd">
-  <div class="sec-hd reveal"><div><div class="eyebrow">Explore Areas</div><h2 class="sec-title">Neighbourhood <em>Explorer</em></h2><p class="sec-sub">Hover over an area to reveal schools, hospitals, malls, transit and live price data.</p></div><a href="listings.php" class="btn-ol">Browse by Area <i class="fas fa-arrow-right"></i></a></div>
+  <div class="sec-hd reveal"><div><div class="eyebrow">Explore Areas</div><h2 class="sec-title">Neighbourhood <em>Explorer</em></h2><p class="sec-sub">Hover over an area to reveal schools, hospitals, malls, transit and live price data. Click any card to browse listings.</p></div><a href="listings.php" class="btn-ol">Browse by Area <i class="fas fa-arrow-right"></i></a></div>
   <div class="nbhd-grid">
-    <div class="nb">
-      <img src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=900&q=88&auto=format" alt="Bandra">
+    <div class="nb" onclick="location='listings.php?location=Bandra'" id="nb0">
+      <div class="nb-img-wrap">
+        <div class="nb-slide nba" data-nb="0"><img src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=900&q=88&auto=format" alt="Bandra West"></div>
+        <div class="nb-slide" data-nb="0"><img src="https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?w=900&q=88&auto=format" alt="Bandra"></div>
+        <div class="nb-slide" data-nb="0"><img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=88&auto=format" alt="Bandra 2"></div>
+        <div class="nb-slide" data-nb="0"><img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&q=88&auto=format" alt="Bandra 3"></div>
+        <div class="nb-slide" data-nb="0"><img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&q=88&auto=format" alt="Bandra 4"></div>
+      </div>
       <div class="nb-ov"></div>
       <div class="nb-static"><div class="nb-city-name">Bandra West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['bandra']??0) + ($area_counts['juhu']??0) + 3; ?> listings available</div></div>
       <div class="nb-detail">
         <div class="nb-price-strip"><div><div class="nb-avg-price">₹28,000<span style="font-size:1.8rem;font-weight:400;color:rgba(255,255,255,.45)">/sqft</span></div><div class="nb-avg-label">Avg. market price</div></div><div class="nb-rating"><div class="nb-stars">★★★★★</div><div class="nb-rating-label">4.8 Liveability</div></div></div>
-        <div class="nb-amen"><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-graduation-cap"></i></div><div><div class="nb-am-label">12 Schools</div><div class="nb-am-val">St. Andrew's, Rizvi</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-hospital"></i></div><div><div class="nb-am-label">8 Hospitals</div><div class="nb-am-val">Holy Family, Lilavati</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-shopping-bag"></i></div><div><div class="nb-am-label">Malls & Markets</div><div class="nb-am-val">Linking Rd, Palladium</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-train"></i></div><div><div class="nb-am-label">Transit</div><div class="nb-am-val">Bandra Station 1.2km</div></div></div></div>
-        <a href="listings.php?location=Bandra" class="nb-cta"><i class="fas fa-search"></i> View Listings in Bandra West</a>
+        <div class="nb-amen"><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-graduation-cap"></i></div><div><div class="nb-am-label">12 Schools</div><div class="nb-am-val">St. Andrew's, Rizvi</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-hospital"></i></div><div><div class="nb-am-label">8 Hospitals</div><div class="nb-am-val">Holy Family, Lilavati</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-shopping-bag"></i></div><div><div class="nb-am-label">Malls &amp; Markets</div><div class="nb-am-val">Linking Rd, Palladium</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-train"></i></div><div><div class="nb-am-label">Transit</div><div class="nb-am-val">Bandra Station 1.2km</div></div></div></div>
+        <a href="listings.php?location=Bandra" class="nb-cta" onclick="event.stopPropagation()"><i class="fas fa-search"></i> View Listings in Bandra West</a>
       </div>
     </div>
-    <div class="nb">
-      <img src="https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=900&q=88&auto=format" alt="Andheri">
+    <div class="nb" onclick="location='listings.php?location=Andheri'" id="nb1">
+      <div class="nb-img-wrap">
+        <div class="nb-slide nba" data-nb="1"><img src="https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=900&q=88&auto=format" alt="Andheri West"></div>
+        <div class="nb-slide" data-nb="1"><img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=900&q=88&auto=format" alt="Andheri 2"></div>
+        <div class="nb-slide" data-nb="1"><img src="https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?w=900&q=88&auto=format" alt="Andheri 3"></div>
+        <div class="nb-slide" data-nb="1"><img src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=900&q=88&auto=format" alt="Andheri 4"></div>
+        <div class="nb-slide" data-nb="1"><img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=900&q=88&auto=format" alt="Andheri 5"></div>
+      </div>
       <div class="nb-ov"></div>
       <div class="nb-static"><div class="nb-city-name">Andheri West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['andheri']??0) + 2; ?> listings available</div></div>
       <div class="nb-detail">
         <div class="nb-price-strip"><div><div class="nb-avg-price">₹22,000<span style="font-size:1.8rem;font-weight:400;color:rgba(255,255,255,.45)">/sqft</span></div><div class="nb-avg-label">Avg. market price</div></div><div class="nb-rating"><div class="nb-stars">★★★★★</div><div class="nb-rating-label">4.7 Liveability</div></div></div>
         <div class="nb-amen"><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-graduation-cap"></i></div><div><div class="nb-am-label">15 Schools</div><div class="nb-am-val">Ryan Int'l, Orchid</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-hospital"></i></div><div><div class="nb-am-label">Top Hospitals</div><div class="nb-am-val">Kokilaben, Nanavati</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-shopping-bag"></i></div><div><div class="nb-am-label">Malls</div><div class="nb-am-val">InOrbit, Citi Mall</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-subway"></i></div><div><div class="nb-am-label">Metro</div><div class="nb-am-val">Andheri Metro 0.5km</div></div></div></div>
-        <a href="listings.php?location=Andheri" class="nb-cta"><i class="fas fa-search"></i> View Listings in Andheri West</a>
+        <a href="listings.php?location=Andheri" class="nb-cta" onclick="event.stopPropagation()"><i class="fas fa-search"></i> View Listings in Andheri West</a>
       </div>
     </div>
-    <div class="nb">
-      <img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=900&q=88&auto=format" alt="Hinjewadi">
+    <div class="nb" onclick="location='listings.php?location=Borivali'" id="nb2">
+      <div class="nb-img-wrap">
+        <div class="nb-slide nba" data-nb="2"><img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=900&q=88&auto=format" alt="Borivali West"></div>
+        <div class="nb-slide" data-nb="2"><img src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=900&q=88&auto=format" alt="Borivali 2"></div>
+        <div class="nb-slide" data-nb="2"><img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=900&q=88&auto=format" alt="Borivali 3"></div>
+        <div class="nb-slide" data-nb="2"><img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&q=88&auto=format" alt="Borivali 4"></div>
+        <div class="nb-slide" data-nb="2"><img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=900&q=88&auto=format" alt="Borivali 5"></div>
+      </div>
       <div class="nb-ov"></div>
-      <div class="nb-static"><div class="nb-city-name">Hinjewadi</div><div class="nb-state">Pune, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['hinjewadi']??0) + ($area_counts['baner']??0) + 2; ?> listings available</div></div>
+      <div class="nb-static"><div class="nb-city-name">Borivali West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['hinjewadi']??0) + ($area_counts['baner']??0) + 2; ?> listings available</div></div>
       <div class="nb-detail">
-        <div class="nb-price-strip"><div><div class="nb-avg-price">₹8,500<span style="font-size:1.8rem;font-weight:400;color:rgba(255,255,255,.45)">/sqft</span></div><div class="nb-avg-label">Avg. market price</div></div><div class="nb-rating"><div class="nb-stars">★★★★☆</div><div class="nb-rating-label">4.5 Liveability</div></div></div>
-        <div class="nb-amen"><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-graduation-cap"></i></div><div><div class="nb-am-label">9 Schools</div><div class="nb-am-val">Blue Ridge, VIBGYOR</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-hospital"></i></div><div><div class="nb-am-label">6 Hospitals</div><div class="nb-am-val">Symbiosis, Sahyadri</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-briefcase"></i></div><div><div class="nb-am-label">IT Companies</div><div class="nb-am-val">Infosys, TCS, Wipro</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-shopping-bag"></i></div><div><div class="nb-am-label">Shopping</div><div class="nb-am-val">Westend Mall, D-Mart</div></div></div></div>
-        <a href="listings.php?location=Pune" class="nb-cta"><i class="fas fa-search"></i> View Listings in Hinjewadi</a>
+        <div class="nb-price-strip"><div><div class="nb-avg-price">₹16,500<span style="font-size:1.8rem;font-weight:400;color:rgba(255,255,255,.45)">/sqft</span></div><div class="nb-avg-label">Avg. market price</div></div><div class="nb-rating"><div class="nb-stars">★★★★☆</div><div class="nb-rating-label">4.5 Liveability</div></div></div>
+        <div class="nb-amen"><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-graduation-cap"></i></div><div><div class="nb-am-label">18 Schools</div><div class="nb-am-val">Carmel, Shri MM</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-hospital"></i></div><div><div class="nb-am-label">10 Hospitals</div><div class="nb-am-val">Wockhardt, Apex</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-tree"></i></div><div><div class="nb-am-label">National Park</div><div class="nb-am-val">Sanjay Gandhi NP 2km</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-train"></i></div><div><div class="nb-am-label">Transit</div><div class="nb-am-val">Borivali Station 1km</div></div></div></div>
+        <a href="listings.php?location=Borivali" class="nb-cta" onclick="event.stopPropagation()"><i class="fas fa-search"></i> View Listings in Borivali West</a>
       </div>
     </div>
   </div>
@@ -896,7 +965,7 @@ while($row = $sel_areas->fetch(PDO::FETCH_ASSOC)){
     <div class="foot-brand"><a href="home.php" class="foot-logo">My<span>Estate</span></a><p>Trusted real estate across Mumbai & Pune. Verified listings, zero commission, expert guidance.</p><div class="foot-socials"><a href="#" class="fsc"><i class="fab fa-instagram"></i></a><a href="#" class="fsc"><i class="fab fa-facebook-f"></i></a><a href="#" class="fsc"><i class="fab fa-twitter"></i></a><a href="#" class="fsc"><i class="fab fa-youtube"></i></a></div></div>
     <div class="foot-col"><h4>Properties</h4><a href="listings.php?type=apartment"><i class="fas fa-chevron-right"></i>Apartments</a><a href="listings.php?type=villa"><i class="fas fa-chevron-right"></i>Villas</a><a href="listings.php?type=plot"><i class="fas fa-chevron-right"></i>Plots</a><a href="listings.php?type=commercial"><i class="fas fa-chevron-right"></i>Commercial</a></div>
     <div class="foot-col"><h4>Quick Links</h4><a href="home.php"><i class="fas fa-chevron-right"></i>Dashboard</a><a href="listings.php"><i class="fas fa-chevron-right"></i>All Listings</a><a href="saved.php"><i class="fas fa-chevron-right"></i>Saved</a><a href="about.php"><i class="fas fa-chevron-right"></i>About Us</a></div>
-    <div class="foot-col"><h4>Contact Us</h4><div class="fci"><div class="fci-ic"><i class="fas fa-map-marker-alt"></i></div><div class="fci-t"><strong>Office</strong>Bandra West, Mumbai — 400050</div></div><div class="fci"><div class="fci-ic"><i class="fas fa-phone-alt"></i></div><div class="fci-t"><strong>Phone</strong>+91 98765 43210</div></div><div class="fci"><div class="fci-ic"><i class="fas fa-envelope"></i></div><div class="fci-t"><strong>Email</strong>hello@myestate.in</div></div></div>
+    <div class="foot-col"><h4>Contact Us</h4><div class="fci"><div class="fci-ic"><i class="fas fa-map-marker-alt"></i></div><div class="fci-t"><strong>Office</strong>Nalasopara West, Maharashtra — 401203</div></div><div class="fci"><div class="fci-ic"><i class="fas fa-envelope"></i></div><div class="fci-t"><strong>Email</strong>rayyanbhagate@gmail.com</div></div></div>
   </div>
   <div class="foot-bot"><p class="foot-copy">© 2026 <span>MyEstate</span>. Made with ♥ in Mumbai.</p><div class="foot-bot-links"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Cookies</a></div></div>
 </footer>
@@ -904,9 +973,46 @@ while($row = $sel_areas->fetch(PDO::FETCH_ASSOC)){
 const obs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');obs.unobserve(x.target);}}),{threshold:.05});
 document.querySelectorAll('.reveal').forEach(r=>obs.observe(r));
 window.addEventListener('scroll',()=>document.getElementById('mainNav').classList.toggle('scrolled',scrollY>40));
-const navUserEl=document.querySelector('.nav-user');
-if(navUserEl){navUserEl.addEventListener('click',function(e){e.stopPropagation();const menu=this.querySelector('.nav-drop-menu');if(menu)menu.classList.toggle('open');});document.addEventListener('click',function(e){const menu=navUserEl.querySelector('.nav-drop-menu');if(menu&&!navUserEl.contains(e.target))menu.classList.remove('open');});}
+// Task 3: Click-based nav dropdown (stays open when moving to items)
+const navUserEl=document.getElementById('navUser');
+if(navUserEl){
+  const navDropMenu=navUserEl.querySelector('.nav-drop-menu');
+  navUserEl.addEventListener('click',(e)=>{e.stopPropagation();navDropMenu.classList.toggle('open');});
+  navDropMenu.addEventListener('click',(e)=>{e.stopPropagation();});
+  document.addEventListener('click',()=>navDropMenu.classList.remove('open'));
+  window.addEventListener('scroll',()=>navDropMenu.classList.remove('open'),{passive:true});
+}
+function confirmLogout(){
+  swal({title:'Logout?',text:'Are you sure you want to logout?',icon:'warning',buttons:['Cancel','Logout'],dangerMode:true})
+  .then(ok=>{if(ok)window.location='components/user_logout.php';});
+}
+// Neighbourhood image carousels — auto-cycle 5 images per card
+(function(){
+  const nbCounts = [5, 5, 5]; // images per neighbourhood (0=Bandra,1=Andheri,2=Borivali)
+  const nbCur = [0, 0, 0];
+  function nbGoSlide(nb, idx) {
+    const slides = document.querySelectorAll(`.nb-slide[data-nb="${nb}"]`);
+    slides.forEach(s => s.classList.remove('nba'));
+    if(slides[idx]) slides[idx].classList.add('nba');
+    nbCur[nb] = idx;
+  }
+  setInterval(() => {
+    for(let i=0; i<3; i++) {
+      const next = (nbCur[i]+1) % nbCounts[i];
+      nbGoSlide(i, next);
+    }
+  }, 3500);
+  // Stagger starting slide so all 3 don't change at same time
+  setTimeout(()=>nbGoSlide(1,1), 1200);
+  setTimeout(()=>nbGoSlide(2,2), 2400);
+})();
 document.querySelectorAll('.lc-save').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();b.classList.toggle('saved');}));
+function toggleSave(btn,propId){
+  btn.classList.toggle('saved');
+  const fd=new FormData();
+  fd.append('property_id',propId);
+  fetch('components/save_send.php',{method:'POST',body:fd}).catch(()=>{});
+}
 function openPopup(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
 function closePopup(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
 document.querySelectorAll('.popup-ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closePopup(o.id);}));
@@ -915,7 +1021,51 @@ let selSlot='';
 function pickSlot(el){document.querySelectorAll('.ts').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');selSlot=el.textContent;}
 let vStep=1;
 function vpGo(n){
-  if(n===2){if(!document.getElementById('vp-prop').value||!document.getElementById('vp-date').value||!document.getElementById('vp-purpose').value||!selSlot){alert('Please fill all required fields and select a time slot.');return;}}
+  if(n===2){
+    if(!document.getElementById('vp-prop').value||!document.getElementById('vp-date').value||!document.getElementById('vp-purpose').value||!selSlot){
+      alert('Please fill all required fields and select a time slot.');return;
+    }
+  }
+  if(n===3){
+    const nm=document.getElementById('vp-name')?.value.trim();
+    const ph=document.getElementById('vp-phone')?.value.trim();
+    const em=document.getElementById('vp-email')?.value.trim();
+    if(!nm||!ph||!em){alert('Please fill your name, phone and email.');return;}
+    // Submit booking via AJAX
+    const fd=new FormData();
+    fd.append('property_id',document.getElementById('vp-prop').value);
+    fd.append('visit_date',document.getElementById('vp-date').value);
+    fd.append('time_slot',selSlot);
+    fd.append('purpose',document.getElementById('vp-purpose').value);
+    fd.append('notes',document.getElementById('vp-notes')?.value||'');
+    fd.append('vp_name',nm);
+    fd.append('vp_phone',ph);
+    fd.append('vp_email',em);
+    fd.append('vp_budget',document.getElementById('vp-budget')?.value||'');
+    const btn=document.querySelector('.vp-fwd');
+    if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Confirming...';}
+    fetch('components/book_visit.php',{method:'POST',body:fd})
+      .then(r=>r.json())
+      .then(data=>{
+        if(data.success){
+          document.querySelectorAll('.vp-panel').forEach(p=>p.classList.remove('act'));
+          document.querySelectorAll('.vps').forEach(s=>s.classList.remove('act','done'));
+          document.querySelectorAll('.vps-line').forEach(l=>l.classList.remove('done'));
+          for(let i=1;i<3;i++){document.getElementById('vps'+i).classList.add('done');const ln=document.getElementById('vline'+i);if(ln)ln.classList.add('done');}
+          document.getElementById('vps3').classList.add('act');
+          document.getElementById('vpanel3').classList.add('act');
+          vStep=3;
+        }else{
+          alert('Error: '+(data.msg||'Could not save booking. Please try again.'));
+          if(btn){btn.disabled=false;btn.innerHTML='Confirm Booking <i class="fas fa-check"></i>';}
+        }
+      })
+      .catch(()=>{
+        alert('Network error. Please check your connection.');
+        if(btn){btn.disabled=false;btn.innerHTML='Confirm Booking <i class="fas fa-check"></i>';}
+      });
+    return;
+  }
   document.querySelectorAll('.vp-panel').forEach(p=>p.classList.remove('act'));
   document.querySelectorAll('.vps').forEach(s=>s.classList.remove('act','done'));
   document.querySelectorAll('.vps-line').forEach(l=>l.classList.remove('done'));
@@ -923,6 +1073,20 @@ function vpGo(n){
   document.getElementById('vps'+n).classList.add('act');
   document.getElementById('vpanel'+n).classList.add('act');
   vStep=n;
+}
+// Slider navigation for latest listings
+let sliderOffset=0;
+function sliderNav(dir){
+  const cards=document.querySelectorAll('#lstSlider .lc');
+  const total=cards.length;
+  if(total<=3)return;
+  sliderOffset=(sliderOffset+dir+total)%total;
+  cards.forEach((c,i)=>{
+    const pos=(i-sliderOffset+total)%total;
+    c.style.display=pos<3?'':'none';
+    c.classList.toggle('big',sliderOffset===i);
+    c.classList.toggle('side',sliderOffset!==i);
+  });
 }
 let apStep=1;
 function apGo(n){

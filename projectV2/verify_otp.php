@@ -40,6 +40,7 @@ if(isset($_POST['verify'])){
       unset($_SESSION['reg_name'], $_SESSION['reg_number'], $_SESSION['reg_email'], $_SESSION['reg_pass']);
 
       // Login
+      $_SESSION['user_id'] = $uid;
       setcookie('user_id', $uid, time() + 60*60*24*30, '/');
       if(isset($_SESSION['redirect_after_login'])){
          $redirect = $_SESSION['redirect_after_login'];

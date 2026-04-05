@@ -10,6 +10,7 @@ if(isset($_POST['submit'])){
    $row = $sel->fetch(PDO::FETCH_ASSOC);
 
    if($sel->rowCount() > 0){
+      $_SESSION['admin_id'] = $row['id'];
       setcookie('admin_id', $row['id'], time() + 60*60*24*30, '/');
       header('location:dashboard.php');
       exit();

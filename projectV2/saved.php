@@ -1,8 +1,7 @@
 <?php  
 include 'components/connect.php';
-if(isset($_COOKIE['user_id'])){
-   $user_id = $_COOKIE['user_id'];
-}else{
+$user_id = validate_user_cookie($conn);
+if(!$user_id){
    header('location:login.php');
    exit();
 }

@@ -218,7 +218,7 @@ a{text-decoration:none;}
 <section class="page-hero">
   <div class="page-hero-inner">
     <div class="eyebrow">Get in Touch</div>
-    <h1 class="page-title">Contact <em>Us</em></h1>
+    <h1 class="page-title">Send Us a <em>Message</em></h1>
   </div>
 </section>
 
@@ -232,7 +232,7 @@ a{text-decoration:none;}
         <div class="cf-field"><label>Email Address *</label><input type="email" name="email" required maxlength="50" placeholder="you@email.com"></div>
       </div>
       <div class="cf-field"><label>Phone Number *</label><input type="number" name="number" required maxlength="10" placeholder="10-digit mobile number"></div>
-      <div class="cf-field"><label>Your Message *</label><textarea name="message" required maxlength="1000" placeholder="Tell us what you're looking for..."></textarea></div>
+      <div class="cf-field"><label>Your Message *</label><textarea name="message" required maxlength="1000" placeholder="Tell us what you're looking for..." style="resize:none;min-height:14rem;"></textarea></div>
       <button type="submit" name="send" class="cf-btn"><i class="fas fa-paper-plane"></i> Send Message</button>
     </form>
   </div>
@@ -242,23 +242,15 @@ a{text-decoration:none;}
       <div class="ci-icon"><i class="fas fa-map-marker-alt"></i></div>
       <div>
         <div class="ci-label">Office Address</div>
-        <div class="ci-value">Bandra West, Mumbai</div>
-        <div class="ci-sub">Maharashtra — 400050, India</div>
-      </div>
-    </div>
-    <div class="ci-card">
-      <div class="ci-icon"><i class="fas fa-phone-alt"></i></div>
-      <div>
-        <div class="ci-label">Phone</div>
-        <div class="ci-value">+91 98765 43210</div>
-        <div class="ci-sub">Mon–Sat, 9 AM – 7 PM</div>
+        <div class="ci-value">Nalasopara West, Mumbai</div>
+        <div class="ci-sub">Maharashtra — 401203, India</div>
       </div>
     </div>
     <div class="ci-card">
       <div class="ci-icon"><i class="fas fa-envelope"></i></div>
       <div>
         <div class="ci-label">Email</div>
-        <div class="ci-value">hello@myestate.in</div>
+        <div class="ci-value">rayyanbhagate@gmail.com</div>
         <div class="ci-sub">We reply within 24 hours</div>
       </div>
     </div>
@@ -271,7 +263,7 @@ a{text-decoration:none;}
       </div>
     </div>
     <div class="ci-map">
-      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3773.8!2d72.8256!3d19.0544!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTnCsDAzJzE1LjgiTiA3MsKwNDknMzIuMiJF!5e0!3m2!1sen!2sin!4v1" allowfullscreen="" loading="lazy"></iframe>
+      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3767.5!2d72.7785!3d19.4551!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7a9b1b1b1b1b1%3A0x0!2sNalasopara+West%2C+Maharashtra+401203!5e0!3m2!1sen!2sin!4v1" allowfullscreen="" loading="lazy"></iframe>
     </div>
   </div>
 </div>
@@ -281,7 +273,7 @@ a{text-decoration:none;}
     <div class="foot-brand"><a href="home.php" class="foot-logo">My<span>Estate</span></a><p>Trusted real estate across Mumbai & Pune.</p><div class="foot-socials"><a href="#" class="fsc"><i class="fab fa-instagram"></i></a><a href="#" class="fsc"><i class="fab fa-facebook-f"></i></a><a href="#" class="fsc"><i class="fab fa-twitter"></i></a><a href="#" class="fsc"><i class="fab fa-youtube"></i></a></div></div>
     <div class="foot-col"><h4>Properties</h4><a href="listings.php"><i class="fas fa-chevron-right"></i>All Listings</a><a href="search.php"><i class="fas fa-chevron-right"></i>Search</a></div>
     <div class="foot-col"><h4>Quick Links</h4><a href="home.php"><i class="fas fa-chevron-right"></i>Dashboard</a><a href="about.php"><i class="fas fa-chevron-right"></i>About Us</a></div>
-    <div class="foot-col"><h4>Contact Us</h4><div class="fci"><div class="fci-ic"><i class="fas fa-map-marker-alt"></i></div><div class="fci-t"><strong>Office</strong>Bandra West, Mumbai — 400050</div></div><div class="fci"><div class="fci-ic"><i class="fas fa-phone-alt"></i></div><div class="fci-t"><strong>Phone</strong>+91 98765 43210</div></div><div class="fci"><div class="fci-ic"><i class="fas fa-envelope"></i></div><div class="fci-t"><strong>Email</strong>hello@myestate.in</div></div></div>
+    <div class="foot-col"><h4>Contact Us</h4><div class="fci"><div class="fci-ic"><i class="fas fa-map-marker-alt"></i></div><div class="fci-t"><strong>Office</strong>Nalasopara West, Maharashtra — 401203</div></div><div class="fci"><div class="fci-ic"><i class="fas fa-envelope"></i></div><div class="fci-t"><strong>Email</strong>rayyanbhagate@gmail.com</div></div></div>
   </div>
   <div class="foot-bot"><p class="foot-copy">© <?= date('Y'); ?> <span>MyEstate</span>. Made with ♥ in Mumbai.</p><div class="foot-bot-links"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Cookies</a></div></div>
 </footer>
@@ -293,19 +285,14 @@ a{text-decoration:none;}
 window.addEventListener('scroll', () => {
   document.getElementById('mainNav').classList.toggle('scrolled', scrollY > 40);
 });
-
-// Profile dropdown toggle
-const navUser = document.querySelector('.nav-user');
+// Click-based nav dropdown
+const navUser = document.getElementById('navUser');
 if(navUser){
-  navUser.addEventListener('click', function(e){
-    e.stopPropagation();
-    const menu = this.querySelector('.nav-drop-menu');
-    menu.classList.toggle('open');
-  });
-  document.addEventListener('click', function(e){
-    const menu = navUser.querySelector('.nav-drop-menu');
-    if(menu && !navUser.contains(e.target)) menu.classList.remove('open');
-  });
+  const menu = navUser.querySelector('.nav-drop-menu');
+  navUser.addEventListener('click', function(e){ e.stopPropagation(); menu.classList.toggle('open'); });
+  menu.addEventListener('click', function(e){ e.stopPropagation(); });
+  document.addEventListener('click', function(e){ if(!navUser.contains(e.target)) menu.classList.remove('open'); });
+  window.addEventListener('scroll', function(){ menu.classList.remove('open'); }, {passive:true});
 }
 </script>
 </body>

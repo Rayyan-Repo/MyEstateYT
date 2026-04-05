@@ -2,11 +2,10 @@
 
 include '../components/connect.php';
 
-if(isset($_COOKIE['admin_id'])){
-   $admin_id = $_COOKIE['admin_id'];
-}else{
-   $admin_id = '';
+$admin_id = validate_admin_cookie($conn);
+if(!$admin_id){
    header('location:login.php');
+   exit();
 }
 
 $select_admin = $conn->prepare("SELECT * FROM `admins` WHERE id = ? LIMIT 1");
@@ -28,6 +27,25 @@ $total_admins = $count_admins->fetchColumn();
 $count_messages = $conn->prepare("SELECT COUNT(*) FROM `messages`");
 $count_messages->execute();
 $total_messages = $count_messages->fetchColumn();
+
+// Bookings / requests
+$count_requests = $conn->prepare("SELECT COUNT(*) FROM `requests`");
+$count_requests->execute();
+$total_requests = $count_requests->fetchColumn();
+
+$count_pending = $conn->prepare("SELECT COUNT(*) FROM `requests` WHERE status='pending'");
+$count_pending->execute();
+$total_pending = $count_pending->fetchColumn();
+
+$recent_requests = $conn->prepare(
+    "SELECT r.id, r.visit_date, r.time_slot, r.purpose, r.status, r.date,
+            r.user_name, r.user_phone,
+            p.property_name, p.address
+     FROM requests r
+     LEFT JOIN property p ON r.property_id = p.id
+     ORDER BY r.id DESC LIMIT 6"
+);
+$recent_requests->execute();
 
 $recent_listings = $conn->prepare("SELECT * FROM `property` ORDER BY id DESC LIMIT 4");
 $recent_listings->execute();
@@ -372,12 +390,53 @@ html{font-size:62.5%;}
     </div>
     <div class="kpi">
       <div class="kpi-top">
-        <div class="kpi-ic" style="background:#fdf4ff;color:#9333ea;"><i class="fas fa-chart-line"></i></div>
-        <div class="kpi-badge" style="background:#fdf4ff;color:#9333ea;">Live</div>
+        <div class="kpi-ic" style="background:#fdf4ff;color:#9333ea;"><i class="fas fa-calendar-check"></i></div>
+        <div class="kpi-badge" style="background:#fff8ee;color:#e07b00;"><?= $total_pending > 0 ? $total_pending.' Pending' : 'None'; ?></div>
       </div>
-      <div class="kv"><?= $total_listings + $total_users; ?></div><div class="kl">Total Activity</div>
+      <div class="kv"><?= $total_requests; ?></div><div class="kl">Site Visits Booked</div>
       <div class="kspark"><canvas id="sp5"></canvas></div>
     </div>
+  </div>
+
+  <!-- RECENT BOOKINGS TABLE -->
+  <div class="panel" style="margin-bottom:2.4rem;">
+    <div class="ph">
+      <div><div class="pt">Recent Visit Bookings</div><div class="ps">Latest site visit requests from users</div></div>
+      <a href="requests.php" style="font-size:1.2rem;color:var(--r);font-weight:700;text-decoration:none;"><i class="fas fa-arrow-right"></i> View All</a>
+    </div>
+    <?php
+    $bk_rows = $recent_requests->fetchAll(PDO::FETCH_ASSOC);
+    if(empty($bk_rows)):
+    ?>
+    <div style="text-align:center;padding:3rem;color:var(--ink3);font-size:1.3rem;"><i class="fas fa-calendar-times" style="display:block;font-size:3rem;margin-bottom:1rem;opacity:.3;"></i> No bookings yet.</div>
+    <?php else: ?>
+    <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:1.25rem;">
+      <thead><tr style="border-bottom:1px solid var(--line);">
+        <th style="padding:1rem 1.4rem;text-align:left;font-size:1rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);">Visitor</th>
+        <th style="padding:1rem 1.4rem;text-align:left;font-size:1rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);">Property</th>
+        <th style="padding:1rem 1.4rem;text-align:left;font-size:1rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);">Visit Date</th>
+        <th style="padding:1rem 1.4rem;text-align:left;font-size:1rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);">Slot</th>
+        <th style="padding:1rem 1.4rem;text-align:left;font-size:1rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);">Status</th>
+      </tr></thead>
+      <tbody>
+      <?php foreach($bk_rows as $bk):
+        $st = $bk['status'] ?? 'pending';
+        $st_colors = ['pending'=>'#b07000::#fff8ee','confirmed'=>'#1a7a4e::#edfff4','cancelled'=>'#c0392b::#fff5f5'];
+        $stc = isset($st_colors[$st]) ? explode('::',$st_colors[$st]) : ['#9a6565','#fdf1f1'];
+      ?>
+      <tr style="border-bottom:1px solid var(--line);transition:background .15s;" onmouseover="this.style.background='var(--rp)'" onmouseout="this.style.background=''">
+        <td style="padding:1.2rem 1.4rem;"><div style="font-weight:700;color:var(--ink);"><?= htmlspecialchars($bk['user_name'] ?: 'Unknown') ?></div><div style="font-size:1.1rem;color:var(--ink3);"><?= htmlspecialchars($bk['user_phone'] ?: '—') ?></div></td>
+        <td style="padding:1.2rem 1.4rem;"><div style="font-weight:600;color:var(--ink);max-width:20rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= htmlspecialchars($bk['property_name'] ?: 'General Visit') ?></div><div style="font-size:1.1rem;color:var(--ink3);"><?= htmlspecialchars($bk['address'] ?: '—') ?></div></td>
+        <td style="padding:1.2rem 1.4rem;font-weight:600;color:var(--ink);"><?= !empty($bk['visit_date']) ? date('d M Y', strtotime($bk['visit_date'])) : date('d M Y', strtotime($bk['date'])) ?></td>
+        <td style="padding:1.2rem 1.4rem;color:var(--ink3);"><?= htmlspecialchars($bk['time_slot'] ?: '—') ?></td>
+        <td style="padding:1.2rem 1.4rem;"><span style="padding:.4rem 1.1rem;border-radius:99px;font-size:1.05rem;font-weight:700;background:<?= $stc[1] ?>;color:<?= $stc[0] ?>"><?= ucfirst($st) ?></span></td>
+      </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+    </div>
+    <?php endif; ?>
   </div>
 
   <!-- CHARTS -->
@@ -400,10 +459,25 @@ html{font-size:62.5%;}
         <div class="donut-mid"><div class="dv"><?= $total_listings; ?></div><div class="dl">Total</div></div>
       </div>
       <div class="leg">
-        <div class="lg-r"><div class="lg-sq" style="background:#d62828;"></div><div class="lg-lbl">Apartment</div><div class="lg-bg"><div class="lg-fill" style="width:45%;background:#d62828;"></div></div><div class="lg-pct">45%</div></div>
-        <div class="lg-r"><div class="lg-sq" style="background:#f7a400;"></div><div class="lg-lbl">Villa</div><div class="lg-bg"><div class="lg-fill" style="width:25%;background:#f7a400;"></div></div><div class="lg-pct">25%</div></div>
-        <div class="lg-r"><div class="lg-sq" style="background:#1a9c4e;"></div><div class="lg-lbl">Plot</div><div class="lg-bg"><div class="lg-fill" style="width:20%;background:#1a9c4e;"></div></div><div class="lg-pct">20%</div></div>
-        <div class="lg-r"><div class="lg-sq" style="background:#3a5bd9;"></div><div class="lg-lbl">Comml.</div><div class="lg-bg"><div class="lg-fill" style="width:10%;background:#3a5bd9;"></div></div><div class="lg-pct">10%</div></div>
+        <?php
+          $donut_total = max(1, $total_listings);
+          $types = ['Apartment'=>'#d62828','Villa'=>'#f7a400','Plot'=>'#1a9c4e','Commercial'=>'#3a5bd9'];
+          $type_keys = ['apartment','villa','plot','commercial'];
+          $type_counts_arr = [];
+          foreach($type_keys as $tk){
+            $qc=$conn->prepare("SELECT COUNT(*) FROM property WHERE type=?");
+            $qc->execute([$tk]);
+            $type_counts_arr[$tk]=$qc->fetchColumn();
+          }
+          $labels=['Apartment','Villa','Plot','Commercial'];
+          $tkeys=['apartment','villa','plot','commercial'];
+          $colors_d=['#d62828','#f7a400','#1a9c4e','#3a5bd9'];
+          foreach($labels as $li=>$lb):
+            $cnt=$type_counts_arr[$tkeys[$li]];
+            $pct=$donut_total>0?round($cnt/$donut_total*100):0;
+        ?>
+        <div class="lg-r"><div class="lg-sq" style="background:<?= $colors_d[$li]; ?>"></div><div class="lg-lbl"><?= $lb ?></div><div class="lg-bg"><div class="lg-fill" style="width:<?= $pct ?>%;background:<?= $colors_d[$li]; ?>"></div></div><div class="lg-pct"><?= $pct ?>%</div></div>
+        <?php endforeach; ?>
       </div>
     </div>
   </div>
@@ -468,7 +542,7 @@ html{font-size:62.5%;}
         <div class="m-top">
           <div class="m-av" style="background:<?= $msg_colors[$j % 3]; ?>"><?= strtoupper(substr($m['name'] ?? 'U', 0, 1)); ?></div>
           <div class="m-from"><?= htmlspecialchars($m['name'] ?? 'User'); ?></div>
-          <?php if(!$m['seen']): ?><div class="unread-dot"></div><?php endif; ?>
+          <?php if(!($m['seen'] ?? 1)): ?><div class="unread-dot"></div><?php endif; ?>
           <div class="m-time"><?= date('d M', strtotime($m['date'] ?? 'now')); ?></div>
         </div>
         <div class="m-txt"><?= htmlspecialchars(substr($m['message'] ?? $m['msg'] ?? '—', 0, 80)); ?>...</div>

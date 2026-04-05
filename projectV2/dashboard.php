@@ -1,135 +1,96 @@
 <?php  
-
-include 'components/connect.php';
-
-if(isset($_COOKIE['user_id'])){
-   $user_id = $_COOKIE['user_id'];
-}else{
-   $user_id = '';
-   header('location:login.php');
-}
-
+include 'components/connect.php'; //
+$user_id = validate_user_cookie($conn);
+if(!$user_id){ header('location:login.php'); exit(); }
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
    <meta charset="UTF-8">
-   <meta http-equiv="X-UA-Compatible" content="IE=edge">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>dashboard</title>
-
-   <!-- font awesome cdn link  -->
+   <title>Elite Dashboard | MyEstateYT</title>
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-
-   <!-- custom css file link  -->
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
    <link rel="stylesheet" href="css/style.css">
-
+   <style>
+      /* Ultra-Premium Overrides */
+      .elite-listings { padding: 4rem 2rem; background: #fdfdfd; }
+      .p-card { background: #fff; border-radius: 1.5rem; overflow: hidden; border: 1px solid #eee; transition: .4s cubic-bezier(0.4, 0, 0.2, 1); height: 100%; position: relative; }
+      .p-card:hover { transform: translateY(-12px); box-shadow: 0 25px 50px -12px rgba(214, 40, 40, 0.15); border-color: var(--main-color); }
+      .p-img-box { position: relative; height: 22rem; overflow: hidden; }
+      .p-img-box img { width: 100%; height: 100%; object-fit: cover; transition: .6s; }
+      .p-card:hover .p-img-box img { transform: scale(1.08); }
+      .p-badge { position: absolute; top: 1.5rem; right: 1.5rem; background: rgba(255,255,255,0.9); backdrop-filter: blur(5px); color: var(--main-color); padding: .6rem 1.2rem; border-radius: 5rem; font-weight: 700; font-size: 1.4rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+      .p-content { padding: 2.2rem; }
+      .p-price { font-size: 2.2rem; font-weight: 800; color: var(--black); margin-bottom: .8rem; }
+      .p-name { font-size: 1.8rem; font-weight: 600; color: #444; margin-bottom: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .p-loc { font-size: 1.4rem; color: #777; margin-bottom: 2rem; display: flex; align-items: center; gap: .8rem; }
+      .p-btn { display: flex; align-items: center; justify-content: center; gap: 1rem; width: 100%; padding: 1.5rem; background: #1a1a1a; color: #fff; font-weight: 600; font-size: 1.5rem; border-radius: 0; transition: .3s; }
+      .p-btn:hover { background: var(--main-color); }
+   </style>
 </head>
 <body>
-   
+
 <?php include 'components/user_header.php'; ?>
 
 <section class="dashboard">
-
-   <h1 class="heading">dashboard</h1>
-
+   <h1 class="heading">System Overview</h1>
    <div class="box-container">
-
-      <div class="box">
-      <?php
-         $select_profile = $conn->prepare("SELECT * FROM `users` WHERE id = ? LIMIT 1");
-         $select_profile->execute([$user_id]);
-         $fetch_profile = $select_profile->fetch(PDO::FETCH_ASSOC);
-      ?>
-      <h3>welcome!</h3>
-      <p><?= $fetch_profile['name']; ?></p>
-      <a href="update.php" class="btn">update profile</a>
       </div>
-
-      <div class="box">
-         <h3>filter search</h3>
-         <p>search your dream property</p>
-         <a href="search.php" class="btn">search now</a>
-      </div>
-
-      <div class="box">
-      <?php
-        $count_properties = $conn->prepare("SELECT * FROM `property` WHERE user_id = ?");
-        $count_properties->execute([$user_id]);
-        $total_properties = $count_properties->rowCount();
-      ?>
-      <h3><?= $total_properties; ?></h3>
-      <p>properties listed</p>
-      <a href="my_listings.php" class="btn">view all listings</a>
-      </div>
-
-      <div class="box">
-      <?php
-        $count_requests_received = $conn->prepare("SELECT * FROM `requests` WHERE receiver = ?");
-        $count_requests_received->execute([$user_id]);
-        $total_requests_received = $count_requests_received->rowCount();
-      ?>
-      <h3><?= $total_requests_received; ?></h3>
-      <p>requests received</p>
-      <a href="requests.php" class="btn">view all requests</a>
-      </div>
-
-      <div class="box">
-      <?php
-        $count_requests_sent = $conn->prepare("SELECT * FROM `requests` WHERE sender = ?");
-        $count_requests_sent->execute([$user_id]);
-        $total_requests_sent = $count_requests_sent->rowCount();
-      ?>
-      <h3><?= $total_requests_sent; ?></h3>
-      <p>requests sent</p>
-      <a href="saved.php" class="btn">view saved properties</a>
-      </div>
-
-      <div class="box">
-      <?php
-        $count_saved_properties = $conn->prepare("SELECT * FROM `saved` WHERE user_id = ?");
-        $count_saved_properties->execute([$user_id]);
-        $total_saved_properties = $count_saved_properties->rowCount();
-      ?>
-      <h3><?= $total_saved_properties; ?></h3>
-      <p>properties saved</p>
-      <a href="saved.php" class="btn">view saved properties</a>
-      </div>
-
-   </div>
-
 </section>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
+<section class="elite-listings">
+   <h1 class="heading">exclusive collections</h1>
+   <div class="swiper property-slider">
+      <div class="swiper-wrapper">
+         <?php
+            $select_listings = $conn->prepare("SELECT * FROM `property` ORDER BY date DESC LIMIT 6");
+            $select_listings->execute();
+            if($select_listings->rowCount() > 0){
+               while($fetch_listing = $select_listings->fetch(PDO::FETCH_ASSOC)){
+         ?>
+         <div class="swiper-slide">
+            <div class="p-card">
+               <div class="p-img-box">
+                  <div class="p-badge">New Arrival</div>
+                  <img src="uploaded_files/<?= $fetch_listing['image_01']; ?>" alt="">
+               </div>
+               <div class="p-content">
+                  <div class="p-price">₹<?= $fetch_listing['price']; ?></div>
+                  <h3 class="p-name"><?= $fetch_listing['property_name']; ?></h3>
+                  <p class="p-loc"><i class="fas fa-map-marker-alt"></i> <?= $fetch_listing['address']; ?></p>
+                  <a href="view_property.php?get_id=<?= $fetch_listing['id']; ?>" class="p-btn">
+                     View Property Details <i class="fas fa-arrow-right"></i>
+                  </a>
+               </div>
+            </div>
+         </div>
+         <?php
+               }
+            } else {
+               echo '<p class="empty">Luxury properties arriving soon.</p>';
+            }
+         ?>
+      </div>
+      <div class="swiper-pagination" style="bottom: -5px;"></div>
+   </div>
+</section>
 
 <?php include 'components/footer.php'; ?>
-
-<!-- custom js file link  -->
-<script src="js/script.js"></script>
-
-<?php include 'components/message.php'; ?>
-
+<script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+<script>
+   new Swiper(".property-slider", {
+      loop: true,
+      spaceBetween: 30,
+      autoplay: { delay: 4500, disableOnInteraction: false },
+      pagination: { el: ".swiper-pagination", clickable: true },
+      breakpoints: {
+         0: { slidesPerView: 1 },
+         768: { slidesPerView: 2 },
+         1100: { slidesPerView: 3 },
+      }
+   });
+</script>
 </body>
 </html>

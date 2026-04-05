@@ -73,26 +73,26 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 .eyebrow::before{content:'';width:.45rem;height:.45rem;border-radius:50%;background:var(--r);animation:blink 2s infinite;flex-shrink:0;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* HERO */
-.ab-hero{min-height:100vh;display:flex;align-items:flex-end;position:relative;overflow:hidden;}
-.ab-hero-bg{position:absolute;inset:0;}
-.ab-hero-bg img{width:100%;height:100%;object-fit:cover;}
-.ab-hero-ov{position:absolute;inset:0;background:linear-gradient(170deg,rgba(10,2,2,.2) 0%,rgba(10,2,2,.55) 40%,rgba(10,2,2,.96) 100%);}
-.ab-hero-stroke{position:absolute;top:0;right:0;width:40%;height:100%;background:linear-gradient(135deg,transparent 60%,rgba(214,40,40,.06) 100%);pointer-events:none;}
-.ab-hero-content{position:relative;z-index:2;padding:0 7% 8rem;max-width:95rem;width:100%;}
-.ab-tag{display:inline-flex;align-items:center;gap:.6rem;font-size:1rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,200,200,.8);background:rgba(214,40,40,.18);padding:.4rem 1.2rem;border-radius:99px;border:1px solid rgba(214,40,40,.3);margin-bottom:3rem;}
-.ab-hero-h{font-family:'Cormorant Garamond',serif;font-size:clamp(5rem,9vw,12rem);font-weight:700;color:#fff;line-height:.88;letter-spacing:-.04em;margin-bottom:3rem;}
-.ab-hero-h em{font-style:italic;color:rgba(255,160,160,.9);}
-.ab-hero-sub{font-size:1.75rem;color:rgba(255,255,255,.55);max-width:62rem;line-height:1.75;font-family:'DM Sans',sans-serif;font-weight:300;margin-bottom:5rem;}
-.ab-hero-stats{display:flex;gap:0;border:1px solid rgba(255,255,255,.12);border-radius:2rem;overflow:hidden;background:rgba(255,255,255,.05);backdrop-filter:blur(20px);width:fit-content;}
-.abs{padding:2.4rem 4rem;border-right:1px solid rgba(255,255,255,.1);text-align:center;}
+/* HERO — warm light theme matching main website */
+.ab-hero{min-height:82vh;display:grid;grid-template-columns:1fr 1fr;position:relative;overflow:hidden;background:linear-gradient(145deg,#fff9f9 0%,#fdf1f1 45%,#fae8e8 100%);padding-top:9rem;}
+.ab-hero-deco{position:absolute;border-radius:50%;pointer-events:none;border:1px solid rgba(214,40,40,.07);}
+.ab-hero-deco.r1{width:80rem;height:80rem;top:-30rem;right:-20rem;}
+.ab-hero-deco.r2{width:55rem;height:55rem;top:-15rem;right:-5rem;}
+.ab-hero-img{position:relative;overflow:hidden;}
+.ab-hero-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.ab-hero-img-grad{position:absolute;inset:0;background:linear-gradient(to left,transparent 30%,rgba(253,241,241,.12) 65%,rgba(253,241,241,.96) 100%);}
+.ab-hero-content{position:relative;z-index:2;padding:5rem 7% 8rem;display:flex;flex-direction:column;justify-content:center;}
+.ab-tag{display:inline-flex;align-items:center;gap:.6rem;font-size:.95rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--r);background:var(--rp);padding:.4rem 1.2rem;border-radius:99px;border:1px solid rgba(214,40,40,.15);margin-bottom:2.5rem;width:fit-content;}
+.ab-tag::before{content:'';width:.4rem;height:.4rem;border-radius:50%;background:var(--r);animation:blink 2s infinite;flex-shrink:0;}
+.ab-hero-h{font-family:'Cormorant Garamond',serif;font-size:clamp(5rem,7vw,9.5rem);font-weight:700;color:var(--ink);line-height:.9;letter-spacing:-.04em;margin-bottom:2.5rem;}
+.ab-hero-h em{font-style:italic;color:var(--r);display:block;}
+.ab-hero-sub{font-size:1.65rem;color:var(--ink3);max-width:52rem;line-height:1.75;font-family:'DM Sans',sans-serif;font-weight:300;margin-bottom:4rem;}
+.ab-hero-stats{display:flex;gap:0;border:1.5px solid var(--line);border-radius:2rem;overflow:hidden;background:var(--white);width:fit-content;box-shadow:0 8px 32px rgba(214,40,40,.08);}
+.abs{padding:2.4rem 3.5rem;border-right:1px solid var(--line);text-align:center;}
 .abs:last-child{border-right:none;}
-.abs-n{font-family:'Cormorant Garamond',serif;font-size:5rem;font-weight:700;color:#fff;line-height:1;}
-.abs-l{font-size:1.15rem;color:rgba(255,255,255,.45);margin-top:.3rem;letter-spacing:.08em;}
-.ab-scroll{position:absolute;bottom:3.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.8rem;z-index:2;}
-.ab-scroll span{font-size:1rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.3);}
-.ab-scroll-line{width:1px;height:4.5rem;background:linear-gradient(to bottom,rgba(214,40,40,.8),transparent);animation:scrl 2.2s ease-in-out infinite;}
-@keyframes scrl{0%,100%{transform:scaleY(1);opacity:1}50%{transform:scaleY(.5);opacity:.4}}
+.abs-n{font-family:'Cormorant Garamond',serif;font-size:4.5rem;font-weight:700;color:var(--ink);line-height:1;}
+.abs-l{font-size:1.1rem;color:var(--ink3);margin-top:.3rem;letter-spacing:.06em;}
+.ab-scroll{display:none;}
 
 /* SECTIONS */
 .ab-sec{padding:9rem 7%;}
@@ -145,19 +145,19 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 .as1{grid-column:5/7;}.as2{grid-column:7/9;}.as3{grid-column:9/11;}.as4{grid-column:11/13;}
 .as5{grid-column:5/8;grid-row:2;}.as6{grid-column:8/11;grid-row:2;}.as7{grid-column:11/13;grid-row:2;}
 
-/* FULL WIDTH IMAGE */
-.ab-fullimg{position:relative;height:65rem;overflow:hidden;}
-.ab-fullimg img{width:100%;height:100%;object-fit:cover;}
-.ab-fullimg-ov{position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,2,2,.88) 0%,rgba(10,2,2,.45) 50%,rgba(10,2,2,.1) 100%);}
+/* FULL WIDTH IMAGE — warm overlay */
+.ab-fullimg{position:relative;height:55rem;overflow:hidden;}
+.ab-fullimg img{width:100%;height:100%;object-fit:cover;filter:brightness(.75);}
+.ab-fullimg-ov{position:absolute;inset:0;background:linear-gradient(90deg,rgba(214,40,40,.78) 0%,rgba(150,20,20,.55) 50%,rgba(253,241,241,.15) 100%);}
 .ab-fullimg-cnt{position:absolute;inset:0;display:flex;align-items:center;padding:0 8%;}
 .ab-fullimg-inner{max-width:72rem;}
-.ab-fullimg-inner .eyebrow{background:rgba(214,40,40,.2);color:rgba(255,200,200,.9);border-color:rgba(214,40,40,.25);}
-.ab-fullimg-inner .eyebrow::before{background:rgba(255,160,160,.9);}
+.ab-fullimg-inner .eyebrow{background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.3);}
+.ab-fullimg-inner .eyebrow::before{background:#fff;}
 .ab-fullimg-inner h2{font-family:'Cormorant Garamond',serif;font-size:clamp(4rem,6.5vw,8rem);font-weight:700;color:#fff;letter-spacing:-.035em;line-height:.9;margin-bottom:2.5rem;}
-.ab-fullimg-inner h2 em{font-style:italic;color:rgba(255,160,160,.9);}
-.ab-fullimg-inner p{font-size:1.6rem;color:rgba(255,255,255,.55);line-height:1.78;font-family:'DM Sans',sans-serif;font-weight:300;max-width:56rem;margin-bottom:3.5rem;}
-.ab-cta{display:inline-flex;align-items:center;gap:.9rem;background:linear-gradient(135deg,var(--r),var(--rd));color:#fff;text-decoration:none;padding:1.5rem 3.4rem;border-radius:99px;font-size:1.45rem;font-weight:800;font-family:'Outfit',sans-serif;box-shadow:0 8px 28px rgba(214,40,40,.45);transition:all .3s;}
-.ab-cta:hover{transform:translateY(-3px);box-shadow:0 16px 44px rgba(214,40,40,.6);}
+.ab-fullimg-inner h2 em{font-style:italic;color:rgba(255,220,220,.95);}
+.ab-fullimg-inner p{font-size:1.6rem;color:rgba(255,255,255,.8);line-height:1.78;font-family:'DM Sans',sans-serif;font-weight:300;max-width:56rem;margin-bottom:3.5rem;}
+.ab-cta{display:inline-flex;align-items:center;gap:.9rem;background:#fff;color:var(--r);text-decoration:none;padding:1.5rem 3.4rem;border-radius:99px;font-size:1.45rem;font-weight:800;font-family:'Outfit',sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.2);transition:all .3s;}
+.ab-cta:hover{transform:translateY(-3px);background:var(--rp);box-shadow:0 16px 44px rgba(0,0,0,.28);}
 
 /* VALUES */
 .values-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2.4rem;margin-top:5rem;}
@@ -227,7 +227,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
   <div class="nav-links">
     <a href="home.php">Home</a>
     <a href="listings.php">Properties</a>
-    <a href="home.php#upSec">Upcoming</a>
+    <a href="upcoming.php">Upcoming</a>
     <a href="about.php" class="active">About</a>
     <a href="contact.php">Contact</a>
   </div>
@@ -252,12 +252,11 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 </nav>
 
 <section class="ab-hero">
-  <div class="ab-hero-bg"><img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=2000&q=90&auto=format" alt="MyEstate"></div>
-  <div class="ab-hero-ov"></div>
-  <div class="ab-hero-stroke"></div>
+  <div class="ab-hero-deco r1"></div>
+  <div class="ab-hero-deco r2"></div>
   <div class="ab-hero-content reveal">
-    <div class="ab-tag"><i class="fas fa-circle" style="color:var(--r);font-size:.7rem;"></i> Our Story</div>
-    <h1 class="ab-hero-h">Built on <em>Trust.</em><br>Driven by <em>Dreams.</em></h1>
+    <div class="ab-tag">Our Story</div>
+    <h1 class="ab-hero-h">Built on <em>Trust.</em><br><span style="font-size:.62em;color:var(--ink3);font-weight:400;font-family:'Outfit',sans-serif;font-style:normal;">Driven by</span><em>Dreams.</em></h1>
     <p class="ab-hero-sub">MyEstate was born from a simple belief — that every family deserves a home they love, without the hassle, the fraud, or the hidden costs.</p>
     <div class="ab-hero-stats">
       <div class="abs"><div class="abs-n">8+</div><div class="abs-l">Properties Listed</div></div>
@@ -266,7 +265,10 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
       <div class="abs"><div class="abs-n">4.9★</div><div class="abs-l">Average Rating</div></div>
     </div>
   </div>
-  <div class="ab-scroll"><span>Scroll</span><div class="ab-scroll-line"></div></div>
+  <div class="ab-hero-img">
+    <img src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1400&q=90&auto=format" alt="MyEstate premium real estate">
+    <div class="ab-hero-img-grad"></div>
+  </div>
 </section>
 
 <section class="ab-sec alt">
@@ -367,7 +369,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
     <div class="foot-brand"><span class="foot-logo">My<span>Estate</span></span><p>Your trusted partner for premium real estate across Mumbai and Pune. Verified listings, expert guidance, seamless transactions.</p><div class="foot-socials"><a href="#" class="fsc"><i class="fab fa-instagram"></i></a><a href="#" class="fsc"><i class="fab fa-facebook-f"></i></a><a href="#" class="fsc"><i class="fab fa-twitter"></i></a><a href="#" class="fsc"><i class="fab fa-youtube"></i></a></div></div>
     <div class="foot-col"><h4>Properties</h4><a href="listings.php"><i class="fas fa-chevron-right"></i>Apartments</a><a href="listings.php"><i class="fas fa-chevron-right"></i>Villas</a><a href="listings.php"><i class="fas fa-chevron-right"></i>Plots</a><a href="listings.php"><i class="fas fa-chevron-right"></i>Commercial</a></div>
     <div class="foot-col"><h4>Quick Links</h4><a href="home.php"><i class="fas fa-chevron-right"></i>Dashboard</a><a href="listings.php"><i class="fas fa-chevron-right"></i>All Listings</a><a href="post_property.php"><i class="fas fa-chevron-right"></i>Post a Property</a><a href="about.php"><i class="fas fa-chevron-right"></i>About Us</a></div>
-    <div class="foot-col"><h4>Contact Us</h4><div class="fci"><div class="fci-ic"><i class="fas fa-map-marker-alt"></i></div><div class="fci-t"><strong>Office</strong>Bandra West, Mumbai — 400050</div></div><div class="fci"><div class="fci-ic"><i class="fas fa-phone-alt"></i></div><div class="fci-t"><strong>Phone</strong>+91 98765 43210</div></div><div class="fci"><div class="fci-ic"><i class="fas fa-envelope"></i></div><div class="fci-t"><strong>Email</strong>hello@myestate.in</div></div></div>
+    <div class="foot-col"><h4>Contact Us</h4><div class="fci"><div class="fci-ic"><i class="fas fa-map-marker-alt"></i></div><div class="fci-t"><strong>Office</strong>Nalasopara West, Maharashtra — 401203</div></div><div class="fci"><div class="fci-ic"><i class="fas fa-envelope"></i></div><div class="fci-t"><strong>Email</strong>rayyanbhagate@gmail.com</div></div></div>
   </div>
   <div class="foot-bot"><p class="foot-copy">© 2026 <span>MyEstate</span>. All rights reserved.</p><div class="foot-bot-links"><a href="#">Privacy Policy</a><a href="#">Terms of Use</a><a href="#">Cookie Policy</a></div></div>
 </footer>
@@ -376,18 +378,21 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 const obs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');obs.unobserve(x.target);}}),{threshold:.06});
 document.querySelectorAll('.reveal').forEach(r=>obs.observe(r));
 window.addEventListener('scroll',()=>document.getElementById('mainNav').classList.toggle('scrolled',scrollY>40));
-// Profile dropdown toggle
+// Profile dropdown — click to open, click outside to close, stays open on hover inside
 const navUser=document.getElementById('navUser');
 if(navUser){
+  const menu=navUser.querySelector('.nav-drop-menu');
   navUser.addEventListener('click',function(e){
     e.stopPropagation();
-    const menu=this.querySelector('.nav-drop-menu');
     menu.classList.toggle('open');
   });
+  // Keep open while hovering inside the menu
+  menu.addEventListener('click',function(e){e.stopPropagation();});
   document.addEventListener('click',function(e){
-    const menu=navUser.querySelector('.nav-drop-menu');
     if(!navUser.contains(e.target))menu.classList.remove('open');
   });
+  // Remove on scroll
+  window.addEventListener('scroll',function(){menu.classList.remove('open');},{passive:true});
 }
 </script>
 </body>
