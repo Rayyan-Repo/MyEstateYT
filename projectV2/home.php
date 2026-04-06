@@ -1,5 +1,5 @@
 <?php
-include 'components/connect.php'; // handles session_start() safely
+include 'components/connect.php';
 
 $user_id = validate_user_cookie($conn);
 if(!$user_id){
@@ -7,29 +7,24 @@ if(!$user_id){
    exit();
 }
 
-// Fetch user data
 $sel_user = $conn->prepare("SELECT * FROM `users` WHERE id = ? LIMIT 1");
 $sel_user->execute([$user_id]);
 $fetch_user = $sel_user->fetch(PDO::FETCH_ASSOC);
 $user_name    = $fetch_user ? $fetch_user['name'] : 'User';
 $user_initial = strtoupper(substr($user_name, 0, 1));
 
-// Count saved properties
 $sel_saved = $conn->prepare("SELECT COUNT(*) as cnt FROM `saved` WHERE user_id = ?");
 $sel_saved->execute([$user_id]);
 $saved_count = $sel_saved->fetch(PDO::FETCH_ASSOC)['cnt'];
 
-// Count total listings
 $sel_total = $conn->prepare("SELECT COUNT(*) as cnt FROM `property`");
 $sel_total->execute();
 $total_listings = $sel_total->fetch(PDO::FETCH_ASSOC)['cnt'];
 
-// Count total users
 $sel_users = $conn->prepare("SELECT COUNT(*) as cnt FROM `users`");
 $sel_users->execute();
 $total_users = $sel_users->fetch(PDO::FETCH_ASSOC)['cnt'];
 
-// Real activity data — NO fake multipliers
 $sel_views = $conn->prepare("SELECT COUNT(*) as cnt FROM `requests`");
 $sel_views->execute();
 $total_visits_booked = $sel_views->fetch(PDO::FETCH_ASSOC)['cnt'];
@@ -42,48 +37,30 @@ $sel_saves = $conn->prepare("SELECT COUNT(*) as cnt FROM `saved`");
 $sel_saves->execute();
 $total_saves = $sel_saves->fetch(PDO::FETCH_ASSOC)['cnt'];
 
-// Recent activity feed from real data
 $feed_items = [];
 
-// Recent properties
 $sel_recent_props = $conn->prepare("SELECT property_name, type, address FROM `property` ORDER BY id DESC LIMIT 3");
 $sel_recent_props->execute();
 while($rp = $sel_recent_props->fetch(PDO::FETCH_ASSOC)){
-   $feed_items[] = [
-      'icon' => 'plus', 'cls' => 'new',
-      'text' => '<strong>New listing added</strong> — ' . htmlspecialchars($rp['property_name']) . ' in ' . htmlspecialchars($rp['address']),
-      'tag' => ucfirst($rp['type']), 'time' => 'recently'
-   ];
+   $feed_items[] = ['icon'=>'plus','cls'=>'new','text'=>'<strong>New listing added</strong> — '.htmlspecialchars($rp['property_name']).' in '.htmlspecialchars($rp['address']),'tag'=>ucfirst($rp['type']),'time'=>'recently'];
 }
 
-// Recent saves
 $sel_recent_saves = $conn->prepare("SELECT s.property_id, p.property_name, p.type FROM `saved` s JOIN `property` p ON s.property_id = p.id ORDER BY s.id DESC LIMIT 2");
 $sel_recent_saves->execute();
 while($rs = $sel_recent_saves->fetch(PDO::FETCH_ASSOC)){
-   $feed_items[] = [
-      'icon' => 'heart', 'cls' => 'save',
-      'text' => 'A user just saved <strong>' . htmlspecialchars($rs['property_name']) . '</strong>',
-      'tag' => ucfirst($rs['type']), 'time' => 'recently'
-   ];
+   $feed_items[] = ['icon'=>'heart','cls'=>'save','text'=>'A user just saved <strong>'.htmlspecialchars($rs['property_name']).'</strong>','tag'=>ucfirst($rs['type']),'time'=>'recently'];
 }
 
-// Recent users
 $sel_recent_users = $conn->prepare("SELECT name FROM `users` ORDER BY id DESC LIMIT 2");
 $sel_recent_users->execute();
 while($ru = $sel_recent_users->fetch(PDO::FETCH_ASSOC)){
-   $feed_items[] = [
-      'icon' => 'user-plus', 'cls' => 'new',
-      'text' => '<strong>New buyer registered</strong> — ' . htmlspecialchars($ru['name']),
-      'tag' => 'New User', 'time' => 'recently'
-   ];
+   $feed_items[] = ['icon'=>'user-plus','cls'=>'new','text'=>'<strong>New buyer registered</strong> — '.htmlspecialchars($ru['name']),'tag'=>'New User','time'=>'recently'];
 }
 
-// DYNAMIC LATEST LISTINGS for homepage slider
 $sel_latest = $conn->prepare("SELECT id, property_name, address, price, type, offer, bedroom, bathroom, carpet, furnished, image_01 FROM `property` ORDER BY id DESC LIMIT 6");
 $sel_latest->execute();
 $latest_properties = $sel_latest->fetchAll(PDO::FETCH_ASSOC);
 
-// Property list for booking popup dropdown
 $sel_bk_props = $conn->prepare("SELECT id, property_name, address, price FROM `property` ORDER BY id DESC LIMIT 50");
 $sel_bk_props->execute();
 $booking_properties = $sel_bk_props->fetchAll(PDO::FETCH_ASSOC);
@@ -151,10 +128,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 .nd-danger i{color:#c0392b!important;}
 .nd-danger:hover{background:#fff5f5!important;}
 .hero{min-height:100vh;padding-top:var(--nav-h);display:grid;grid-template-columns:1fr 1fr;overflow:hidden;position:relative;background:linear-gradient(145deg,#fff9f9 0%,#fdf1f1 45%,#fae8e8 100%);}
-.hero-deco-ring{position:absolute;border-radius:50%;pointer-events:none;border:1px solid rgba(214,40,40,.07);}
-.hero-deco-ring.r1{width:80rem;height:80rem;top:-30rem;right:-20rem;}
-.hero-deco-ring.r2{width:55rem;height:55rem;top:-15rem;right:-5rem;}
-.hero-deco-ring.r3{width:30rem;height:30rem;top:0;right:10rem;}
 .hero-l{padding:6rem 5% 6rem 7%;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:2;}
 .hero-tag{display:inline-flex;align-items:center;gap:.7rem;font-size:.9rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--r);background:var(--rp);padding:.35rem 1.2rem;border-radius:99px;border:1px solid rgba(214,40,40,.15);margin-bottom:2.8rem;width:fit-content;}
 .hero-tag::before{content:'';width:.4rem;height:.4rem;border-radius:50%;background:var(--r);animation:blink 2s infinite;flex-shrink:0;}
@@ -181,17 +154,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 .tr-item{display:flex;align-items:center;gap:.6rem;font-size:1.1rem;font-weight:600;color:var(--ink3);}
 .tr-item i{color:var(--r);font-size:.95rem;}
 .hero-r{position:relative;overflow:hidden;}
-.hero-r img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-.hero-r-grad{position:absolute;inset:0;background:linear-gradient(to left,transparent 30%,rgba(253,241,241,.12) 65%,rgba(253,241,241,.96) 100%);}
-.hf{position:absolute;z-index:4;background:rgba(255,255,255,.93);backdrop-filter:blur(22px);border-radius:1.8rem;padding:1.5rem 2rem;border:1px solid rgba(255,255,255,.6);box-shadow:0 8px 36px rgba(0,0,0,.1);}
-.hf1{top:8rem;right:3.5rem;animation:flt1 5s ease-in-out infinite;}
-.hf2{top:50%;right:3.5rem;transform:translateY(-50%);animation:flt2 6s ease-in-out 1.5s infinite;}
-.hf3{bottom:8rem;right:3.5rem;animation:flt1 4.5s ease-in-out 3s infinite;}
-@keyframes flt1{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-@keyframes flt2{0%,100%{transform:translateY(-50%)}50%{transform:translateY(calc(-50% - 8px))}}
-.hf-ic{width:3.8rem;height:3.8rem;border-radius:1rem;background:var(--rp);display:grid;place-items:center;font-size:1.6rem;color:var(--r);margin-bottom:.8rem;}
-.hf-n{font-family:'Cormorant Garamond',serif;font-size:3.2rem;font-weight:700;color:var(--ink);line-height:1;}
-.hf-l{font-size:1.1rem;color:var(--ink3);}
+.hero-r-grad{position:absolute;inset:0;background:linear-gradient(to left,transparent 30%,rgba(253,241,241,.12) 65%,rgba(253,241,241,.96) 100%);z-index:2;}
 .stats-strip{background:linear-gradient(135deg,var(--r),var(--rd));padding:3.5rem 6%;display:grid;grid-template-columns:repeat(4,1fr);position:relative;overflow:hidden;}
 .ss-texture{position:absolute;inset:0;opacity:.04;background:repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%) 0/18px 18px;}
 .si{text-align:center;padding:0 3rem;border-right:1px solid rgba(255,255,255,.15);position:relative;z-index:1;}
@@ -264,7 +227,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 .ct:hover .ct-pill{transform:translateY(0);opacity:1;}
 .feed-sec{padding:8rem 6%;background:var(--white);overflow:hidden;}
 .feed-layout{display:grid;grid-template-columns:1fr 1.4fr;gap:5rem;align-items:start;}
-.feed-left{}
 .live-badge{display:inline-flex;align-items:center;gap:.7rem;background:linear-gradient(135deg,var(--r),var(--rd));color:#fff;padding:.5rem 1.3rem;border-radius:99px;font-size:1rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2rem;box-shadow:0 4px 18px rgba(214,40,40,.32);}
 .live-dot{width:.7rem;height:.7rem;border-radius:50%;background:#fff;animation:livepulse 1.4s ease-in-out infinite;}
 @keyframes livepulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.5}}
@@ -308,8 +270,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 .nbhd-sec{padding:8rem 6%;background:var(--bg);}
 .nbhd-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-radius:3rem;overflow:hidden;box-shadow:0 32px 96px rgba(214,40,40,.16);}
 .nb{position:relative;height:62rem;overflow:hidden;cursor:pointer;}
-.nb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 1s var(--ease);}
-.nb:hover img{transform:scale(1.08);}
 .nb-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,2,2,.96) 0%,rgba(10,2,2,.5) 40%,rgba(10,2,2,.15) 100%);transition:background .6s var(--ease);}
 .nb:hover .nb-ov{background:linear-gradient(to top,rgba(10,2,2,.98) 0%,rgba(10,2,2,.62) 55%,rgba(10,2,2,.12) 100%);}
 .nb:not(:last-child)::after{content:'';position:absolute;right:0;top:0;bottom:0;width:1px;background:rgba(255,255,255,.08);z-index:10;}
@@ -335,7 +295,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 .nb-cta:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(214,40,40,.6);}
 .emi-sec{padding:7rem 6%;background:linear-gradient(150deg,var(--rp) 0%,var(--rp2) 50%,var(--rp3) 100%);}
 .emi-inner{display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center;}
-.emi-left{}
 .emi-right{background:var(--white);border-radius:2.8rem;padding:4rem;box-shadow:var(--sh2);}
 .emi-output{margin-bottom:3.5rem;}
 .emi-output-label{font-size:1.1rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:.6rem;}
@@ -419,11 +378,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 .ap-field input,.ap-field select,.ap-field textarea{padding:1.2rem 1.6rem;border:1.5px solid var(--line);border-radius:1.4rem;font-size:1.3rem;font-family:'Outfit',sans-serif;color:var(--ink);background:var(--rp);outline:none;transition:all .2s;width:100%;}
 .ap-field input:focus,.ap-field select:focus,.ap-field textarea:focus{border-color:rgba(214,40,40,.4);background:var(--white);}
 .ap-field textarea{resize:vertical;min-height:9rem;}
-.ap-upload{border:2px dashed rgba(214,40,40,.25);border-radius:1.4rem;padding:2.5rem;text-align:center;background:var(--rp);cursor:pointer;transition:all .22s;}
-.ap-upload:hover{border-color:var(--r);background:var(--rp2);}
-.ap-upload i{font-size:3rem;color:var(--r);margin-bottom:1rem;display:block;}
-.ap-upload-text{font-size:1.3rem;font-weight:600;color:var(--ink2);margin-bottom:.3rem;}
-.ap-upload-sub{font-size:1.1rem;color:var(--ink3);}
 .ap-terms{display:flex;align-items:flex-start;gap:1.2rem;padding:1.8rem;background:var(--rp);border-radius:1.4rem;border:1px solid rgba(214,40,40,.12);margin-bottom:2rem;font-size:1.2rem;color:var(--ink3);line-height:1.65;}
 .ap-terms input{width:1.8rem;height:1.8rem;accent-color:var(--r);flex-shrink:0;margin-top:.15rem;cursor:pointer;}
 .ap-nav{display:flex;gap:1rem;justify-content:flex-end;margin-top:2rem;}
@@ -499,10 +453,20 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 .foot-bot-links{display:flex;gap:2rem;}
 .foot-bot-links a{font-size:1.2rem;color:var(--ink3);text-decoration:none;transition:color .2s;}
 .foot-bot-links a:hover{color:var(--r);}
+/* Neighbourhood slides */
+.nb-img-wrap{position:absolute;inset:0;}
+.nb-slide{position:absolute;inset:0;opacity:0;transition:opacity 1s ease;}
+.nb-slide.nba{opacity:1;}
+.nb-slide img{width:100%;height:100%;object-fit:cover;}
+/* Hero image slider */
+.hr-sl{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s cubic-bezier(.22,1,.36,1);z-index:0;}
+.hr-sl.hr-on{opacity:1;}
+.hr-dots{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;gap:.7rem;z-index:3;}
+.hr-dot{width:.7rem;height:.7rem;border-radius:50%;background:rgba(255,255,255,.45);border:none;padding:0;cursor:pointer;transition:all .35s;}
+.hr-dot.on{width:2.4rem;border-radius:99px;background:#fff;}
 @media(max-width:1100px){
   .hero{grid-template-columns:1fr;min-height:auto;}
   .hero-r{height:50vw;min-height:35rem;}
-  .hf1,.hf3{display:none;}
   .lst-grid{grid-template-columns:1fr;}
   .lc.big{grid-row:auto;}
   .lc.big .lc-img{height:28rem;}
@@ -546,15 +510,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
   .hp{justify-content:center;}
   .agent-steps{grid-template-columns:1fr;}
 }
-/* ── HERO IMAGE SLIDER ── */
-.hr-sl{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s cubic-bezier(.22,1,.36,1);z-index:0;}
-.hr-sl.hr-on{opacity:1;}
-.hero-r>img:first-child{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s cubic-bezier(.22,1,.36,1);z-index:0;}
-.hero-r>img:first-child.hr-on{opacity:1;}
-.hero-r-grad,.hf{z-index:2;position:relative;}
-.hr-dots{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;gap:.7rem;z-index:3;}
-.hr-dot{width:.7rem;height:.7rem;border-radius:50%;background:rgba(255,255,255,.45);border:none;padding:0;cursor:pointer;transition:all .35s;}
-.hr-dot.on{width:2.4rem;border-radius:99px;background:#fff;}
 </style>
 </head>
 <body>
@@ -601,7 +556,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
         <div class="vp-nav"><button class="vp-back" onclick="vpGo(1)"><i class="fas fa-arrow-left"></i> Back</button><button class="vp-fwd" onclick="vpGo(3)">Confirm Booking <i class="fas fa-check"></i></button></div>
       </div>
       <div class="vp-panel" id="vpanel3">
-        <div class="vp-success"><div class="vp-sicon"><i class="fas fa-calendar-check"></i></div><h3>Visit Confirmed!</h3><p>Your site visit has been scheduled. A confirmation email has been sent to you. You can track your booking in <strong>My Requests</strong>.</p><br><div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;"><a href="requests.php" class="vp-fwd" style="text-decoration:none;display:flex;"><i class="fas fa-list-alt"></i> View Bookings</a><button class="vp-back" onclick="closePopup('visitPopup')" style="margin:0;">Close</button></div></div>
+        <div class="vp-success"><div class="vp-sicon"><i class="fas fa-calendar-check"></i></div><h3>Visit Confirmed!</h3><p>Your site visit has been scheduled. You can track your booking in <strong>My Requests</strong>.</p><br><div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;"><a href="requests.php" class="vp-fwd" style="text-decoration:none;display:flex;"><i class="fas fa-list-alt"></i> View Bookings</a><button class="vp-back" onclick="closePopup('visitPopup')" style="margin:0;">Close</button></div></div>
       </div>
     </div>
   </div>
@@ -637,17 +592,15 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
       </div>
       <div class="ap-panel" id="apanel3">
         <div class="ap-row">
-          <div class="ap-field"><label>ID Type <span>*</span></label><select id="ap-id-type"><option value="">Select ID type</option><option>Aadhaar Card</option><option>PAN Card</option><option>Passport</option><option>Driving License</option></select></div>
-          <div class="ap-field"><label>ID Number <span>*</span></label><input type="text" id="ap-id-num" placeholder="Enter your ID number"></div>
-          <div class="ap-field"><label>RERA Number</label><input type="text" id="ap-rera" placeholder="RERA registration (if applicable)"></div>
-          <div class="ap-field"><label>Years Active in Real Estate <span>*</span></label><select id="ap-active-yrs"><option value="">Select</option><option>Less than 1 year</option><option>1–3 years</option><option>3–5 years</option><option>5–10 years</option><option>10+ years</option></select></div>
+          <div class="ap-field"><label>ID Type <span>*</span></label><select><option value="">Select ID type</option><option>Aadhaar Card</option><option>PAN Card</option><option>Passport</option><option>Driving License</option></select></div>
+          <div class="ap-field"><label>ID Number <span>*</span></label><input type="text" placeholder="Enter your ID number"></div>
+          <div class="ap-field"><label>RERA Number</label><input type="text" placeholder="RERA registration (if applicable)"></div>
+          <div class="ap-field"><label>Years Active in Real Estate <span>*</span></label><select><option value="">Select</option><option>Less than 1 year</option><option>1–3 years</option><option>3–5 years</option><option>5–10 years</option><option>10+ years</option></select></div>
         </div>
         <div class="ap-terms"><input type="checkbox" id="apTerms"><label for="apTerms">I confirm all information is accurate. I understand that listing properties requires admin approval after agent verification. I accept MyEstate's agent code of conduct.</label></div>
         <div class="ap-nav"><button class="ap-back" onclick="apGo(2)"><i class="fas fa-arrow-left"></i> Back</button><button class="ap-next" onclick="submitAgent()"><i class="fas fa-paper-plane"></i> Submit Application</button></div>
       </div>
-      <div class="ap-panel" id="apanel4">
-        <div class="ap-success" id="ap-success-msg"></div>
-      </div>
+      <div class="ap-panel" id="apanel4"><div class="ap-success" id="ap-success-msg"></div></div>
     </div>
   </div>
 </div>
@@ -669,14 +622,13 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
         <div class="nd-sep"></div>
         <a href="update.php" class="nd-item"><i class="fas fa-user-edit"></i>Edit Profile</a>
         <div class="nd-sep"></div>
-        <a href="logout.php" class="nd-item nd-danger"><i class="fas fa-sign-out-alt"></i>Logout</a>
+        <a href="javascript:void(0)" onclick="confirmLogout()" class="nd-item nd-danger"><i class="fas fa-sign-out-alt"></i>Logout</a>
       </div>
     </div>
   </div>
 </nav>
-<!-- HERO -->
+<!-- HERO — shapes aur floating boxes removed -->
 <section class="hero">
-  <div class="hero-deco-ring r1"></div><div class="hero-deco-ring r2"></div><div class="hero-deco-ring r3"></div>
   <div class="hero-l">
     <div class="hero-tag">Welcome back, <?= htmlspecialchars($user_name); ?></div>
     <h1 class="hero-h"><span>Good evening,</span><em><?= htmlspecialchars($user_name); ?>.</em><span style="font-size:.62em;color:var(--ink3);font-weight:400;font-family:'Outfit',sans-serif;font-style:normal;letter-spacing:-.01em;">Find your</span><span>perfect home.</span></h1>
@@ -705,16 +657,13 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
     </div>
   </div>
   <div class="hero-r" id="heroR">
-    <img src="https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?w=1400&q=90&auto=format" alt="Premium Property" id="hrImg0">
-    <img class="hr-sl" src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1400&q=90&auto=format" alt="Luxury Villa" id="hrImg1" loading="eager">
-    <img class="hr-sl" src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1400&q=90&auto=format" alt="Modern Apartment" id="hrImg2" loading="eager">
-    <img class="hr-sl" src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1400&q=90&auto=format" alt="Beautiful Home" id="hrImg3" loading="eager">
-    <img class="hr-sl" src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&q=90&auto=format" alt="Elegant Interior" id="hrImg4" loading="eager">
+    <img class="hr-sl" src="https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?w=1400&q=90&auto=format" alt="Premium Property" id="hrImg0">
+    <img class="hr-sl" src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1400&q=90&auto=format" alt="Luxury Villa" id="hrImg1">
+    <img class="hr-sl" src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1400&q=90&auto=format" alt="Modern Apartment" id="hrImg2">
+    <img class="hr-sl" src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1400&q=90&auto=format" alt="Beautiful Home" id="hrImg3">
+    <img class="hr-sl" src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&q=90&auto=format" alt="Elegant Interior" id="hrImg4">
     <div class="hr-dots" id="hrDots"></div>
     <div class="hero-r-grad"></div>
-    <div class="hf hf1"><div class="hf-ic"><i class="fas fa-home"></i></div><div class="hf-n"><?= $total_listings; ?>+</div><div class="hf-l">Properties Listed</div></div>
-    <div class="hf hf2"><div class="hf-ic"><i class="fas fa-users"></i></div><div class="hf-n"><?= $total_users; ?>+</div><div class="hf-l">Happy Buyers</div></div>
-    <div class="hf hf3"><div class="hf-ic"><i class="fas fa-star"></i></div><div class="hf-n">4.9★</div><div class="hf-l">Avg Rating</div></div>
   </div>
 </section>
 <!-- STATS -->
@@ -735,17 +684,36 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
   </div>
   <?php else: ?>
   <div class="lst-grid" id="lstSlider">
-  <?php foreach($latest_properties as $pi => $lp):
-    $lp_img = !empty($lp['image_01']) ? 'uploaded_files/'.htmlspecialchars($lp['image_01']) : 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80&auto=format';
+  <?php
+  $lc_fallback_imgs = [
+    ['https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?w=900&q=88&auto=format','https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=88&auto=format','https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&q=88&auto=format'],
+    ['https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=85&auto=format','https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&q=85&auto=format','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=85&auto=format'],
+    ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=85&auto=format','https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=85&auto=format','https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=85&auto=format'],
+    ['https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?w=800&q=85&auto=format','https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=800&q=85&auto=format','https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=85&auto=format'],
+    ['https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=800&q=85&auto=format','https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=85&auto=format','https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&q=85&auto=format'],
+    ['https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=85&auto=format','https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=800&q=85&auto=format','https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=85&auto=format'],
+  ];
+  foreach($latest_properties as $pi => $lp):
+    $lp_img_main = !empty($lp['image_01']) ? 'uploaded_files/'.htmlspecialchars($lp['image_01']) : $lc_fallback_imgs[$pi % count($lc_fallback_imgs)][0];
+    $lp_extra = $lc_fallback_imgs[$pi % count($lc_fallback_imgs)];
     $lp_price = '₹'.htmlspecialchars($lp['price']);
   ?>
   <div class="lc <?= $pi===0?'big':'side' ?> reveal" style="transition-delay:<?= $pi*0.07 ?>s;<?= $pi>2?'display:none;':'' ?>" data-idx="<?= $pi ?>">
-    <div class="lc-img" style="<?= $pi===0?'height:38rem;':'' ?>cursor:pointer;" onclick="window.location='view_property.php?get_id=<?= htmlspecialchars($lp['id']) ?>'">
-      <img src="<?= $lp_img ?>" alt="<?= htmlspecialchars($lp['property_name']) ?>" loading="lazy">
-      <div class="lc-ov"></div>
-      <?php if($pi===0): ?><div class="lc-badge"><i class="fas fa-fire"></i> Featured</div><?php endif; ?>
-      <button class="lc-save" onclick="event.stopPropagation();toggleSave(this,'<?= htmlspecialchars($lp['id']) ?>')"><i class="fas fa-heart"></i></button>
-      <div class="lc-price-tag"><span><?= $lp_price ?></span></div>
+    <div class="lc-img" style="<?= $pi===0?'height:38rem;':'' ?>cursor:pointer;position:relative;overflow:hidden;" onclick="window.location='view_property.php?get_id=<?= htmlspecialchars($lp['id']) ?>'">
+      <?php if(!empty($lp['image_01'])): ?>
+        <img src="<?= $lp_img_main ?>" alt="<?= htmlspecialchars($lp['property_name']) ?>" loading="lazy" class="lc-sl-img lc-sl-on" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s cubic-bezier(.22,1,.36,1);">
+        <?php foreach($lp_extra as $ei => $eurl): ?>
+        <img src="<?= $eurl ?>" alt="<?= htmlspecialchars($lp['property_name']) ?>" loading="lazy" class="lc-sl-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s cubic-bezier(.22,1,.36,1);">
+        <?php endforeach; ?>
+      <?php else: ?>
+        <?php foreach($lp_extra as $ei => $eurl): ?>
+        <img src="<?= $eurl ?>" alt="<?= htmlspecialchars($lp['property_name']) ?>" loading="lazy" class="lc-sl-img <?= $ei===0?'lc-sl-on':'' ?>" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s cubic-bezier(.22,1,.36,1);">
+        <?php endforeach; ?>
+      <?php endif; ?>
+      <div class="lc-ov" style="position:absolute;inset:0;z-index:2;"></div>
+      <?php if($pi===0): ?><div class="lc-badge" style="z-index:3;"><i class="fas fa-fire"></i> Featured</div><?php endif; ?>
+      <button class="lc-save" style="z-index:3;" onclick="event.stopPropagation();toggleSave(this,'<?= htmlspecialchars($lp['id']) ?>')"><i class="fas fa-heart"></i></button>
+      <div class="lc-price-tag" style="z-index:3;"><span><?= $lp_price ?></span></div>
     </div>
     <div class="lc-body">
       <div class="lc-type"><?= htmlspecialchars(ucfirst($lp['type'])) ?> • <?= htmlspecialchars(ucfirst($lp['offer']??'Sale')) ?></div>
@@ -769,7 +737,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
   <?php if(count($latest_properties)>3): ?>
   <div style="display:flex;justify-content:center;gap:1.2rem;margin-top:3rem;">
     <button onclick="sliderNav(-1)" style="width:4.8rem;height:4.8rem;border-radius:50%;border:1.5px solid var(--line);background:var(--white);font-size:1.6rem;color:var(--ink3);cursor:pointer;transition:all .22s;" onmouseover="this.style.borderColor='var(--r)';this.style.color='var(--r)';" onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--ink3)';" id="slPrev"><i class="fas fa-arrow-left"></i></button>
-    <button onclick="sliderNav(1)"  style="width:4.8rem;height:4.8rem;border-radius:50%;border:1.5px solid var(--line);background:var(--r);font-size:1.6rem;color:#fff;cursor:pointer;transition:all .22s;box-shadow:0 4px 16px rgba(214,40,40,.28);" id="slNext"><i class="fas fa-arrow-right"></i></button>
+    <button onclick="sliderNav(1)" style="width:4.8rem;height:4.8rem;border-radius:50%;border:1.5px solid var(--line);background:var(--r);font-size:1.6rem;color:#fff;cursor:pointer;transition:all .22s;box-shadow:0 4px 16px rgba(214,40,40,.28);" id="slNext"><i class="fas fa-arrow-right"></i></button>
   </div>
   <?php endif; ?>
   <?php endif; ?>
@@ -779,7 +747,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
   <div class="sec-hd reveal"><div><div class="eyebrow">Browse</div><h2 class="sec-title">Explore by <em>Type</em></h2><p class="sec-sub">Every category verified, every listing real.</p></div><a href="listings.php" class="btn-ol">All Listings <i class="fas fa-arrow-right"></i></a></div>
   <div class="cat-track" id="catTrack">
 <?php
-// Real DB counts per type
 $type_cnt = [];
 foreach(['apartment','villa','plot','commercial'] as $tt){
   $qtt=$conn->prepare("SELECT COUNT(*) FROM property WHERE type=?");
@@ -801,7 +768,7 @@ foreach(['apartment','villa','plot','commercial'] as $tt){
       <div class="live-badge"><div class="live-dot"></div> Live Activity</div>
       <div class="eyebrow">What's Happening</div>
       <h2 class="sec-title">Real-Time <em>Activity</em></h2>
-      <p class="sec-sub" style="margin-bottom:0;">See what buyers are looking at right now — live enquiries, new saves, fresh listings and scheduled visits happening across the platform.</p>
+      <p class="sec-sub" style="margin-bottom:0;">See what buyers are looking at right now — live enquiries, new saves, fresh listings and scheduled visits.</p>
       <div class="feed-counter-row">
         <div class="fcount reveal" style="transition-delay:.06s"><div class="fcount-icon"><i class="fas fa-calendar-check"></i></div><div class="fcount-n"><?= $total_visits_booked; ?></div><div class="fcount-l">Visits Booked</div><div class="fcount-delta up"><i class="fas fa-arrow-up"></i> Growing</div></div>
         <div class="fcount reveal" style="transition-delay:.1s"><div class="fcount-icon"><i class="fas fa-paper-plane"></i></div><div class="fcount-n"><?= $total_enquiries; ?></div><div class="fcount-l">Open Enquiries</div><div class="fcount-delta hot"><i class="fas fa-fire"></i> Active</div></div>
@@ -832,68 +799,64 @@ foreach(['apartment','villa','plot','commercial'] as $tt){
   </div>
 </section>
 <?php
-// Dynamic listing counts per area
 $area_counts = [];
 $sel_areas = $conn->prepare("SELECT address FROM property");
 $sel_areas->execute();
 while($row = $sel_areas->fetch(PDO::FETCH_ASSOC)){
    $addr = strtolower($row['address']);
-   if(strpos($addr, 'bandra') !== false) $area_counts['bandra'] = ($area_counts['bandra']??0)+1;
-   if(strpos($addr, 'andheri') !== false) $area_counts['andheri'] = ($area_counts['andheri']??0)+1;
-   if(strpos($addr, 'juhu') !== false) $area_counts['juhu'] = ($area_counts['juhu']??0)+1;
-   if(strpos($addr, 'hinjewadi') !== false) $area_counts['hinjewadi'] = ($area_counts['hinjewadi']??0)+1;
-   if(strpos($addr, 'baner') !== false) $area_counts['baner'] = ($area_counts['baner']??0)+1;
-   if(strpos($addr, 'wakad') !== false) $area_counts['wakad'] = ($area_counts['wakad']??0)+1;
-   if(strpos($addr, 'kothrud') !== false) $area_counts['kothrud'] = ($area_counts['kothrud']??0)+1;
-   if(strpos($addr, 'worli') !== false) $area_counts['worli'] = ($area_counts['worli']??0)+1;
+   if(strpos($addr,'bandra')!==false) $area_counts['bandra']=($area_counts['bandra']??0)+1;
+   if(strpos($addr,'andheri')!==false) $area_counts['andheri']=($area_counts['andheri']??0)+1;
+   if(strpos($addr,'juhu')!==false) $area_counts['juhu']=($area_counts['juhu']??0)+1;
+   if(strpos($addr,'hinjewadi')!==false) $area_counts['hinjewadi']=($area_counts['hinjewadi']??0)+1;
+   if(strpos($addr,'baner')!==false) $area_counts['baner']=($area_counts['baner']??0)+1;
 }
 ?>
-<!-- NEIGHBOURHOOD EXPLORER -->
+<!-- NEIGHBOURHOOD -->
 <section class="nbhd-sec" id="nbhd">
-  <div class="sec-hd reveal"><div><div class="eyebrow">Explore Areas</div><h2 class="sec-title">Neighbourhood <em>Explorer</em></h2><p class="sec-sub">Hover over an area to reveal schools, hospitals, malls, transit and live price data. Click any card to browse listings.</p></div><a href="listings.php" class="btn-ol">Browse by Area <i class="fas fa-arrow-right"></i></a></div>
+  <div class="sec-hd reveal"><div><div class="eyebrow">Explore Areas</div><h2 class="sec-title">Neighbourhood <em>Explorer</em></h2><p class="sec-sub">Hover over an area to reveal live data. Click to browse listings.</p></div><a href="listings.php" class="btn-ol">Browse by Area <i class="fas fa-arrow-right"></i></a></div>
   <div class="nbhd-grid">
-    <div class="nb" onclick="location='listings.php?location=Bandra'" id="nb0">
+    <div class="nb" onclick="location='listings.php?location=Bandra'">
       <div class="nb-img-wrap">
-        <div class="nb-slide nba" data-nb="0"><img src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=900&q=88&auto=format" alt="Bandra West"></div>
-        <div class="nb-slide" data-nb="0"><img src="https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?w=900&q=88&auto=format" alt="Bandra"></div>
-        <div class="nb-slide" data-nb="0"><img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=88&auto=format" alt="Bandra 2"></div>
-        <div class="nb-slide" data-nb="0"><img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&q=88&auto=format" alt="Bandra 3"></div>
-        <div class="nb-slide" data-nb="0"><img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&q=88&auto=format" alt="Bandra 4"></div>
+        <div class="nb-slide nba" data-nb="0"><img src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=900&q=88&auto=format" alt="Bandra"></div>
+        <div class="nb-slide" data-nb="0"><img src="https://images.unsplash.com/photo-1613977257365-aaae5a9817ff?w=900&q=88&auto=format" alt="Bandra 2"></div>
+        <div class="nb-slide" data-nb="0"><img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=88&auto=format" alt="Bandra 3"></div>
+        <div class="nb-slide" data-nb="0"><img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&q=88&auto=format" alt="Bandra 4"></div>
+        <div class="nb-slide" data-nb="0"><img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&q=88&auto=format" alt="Bandra 5"></div>
       </div>
       <div class="nb-ov"></div>
-      <div class="nb-static"><div class="nb-city-name">Bandra West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['bandra']??0) + ($area_counts['juhu']??0) + 3; ?> listings available</div></div>
+      <div class="nb-static"><div class="nb-city-name">Bandra West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['bandra']??0)+($area_counts['juhu']??0)+3; ?> listings</div></div>
       <div class="nb-detail">
         <div class="nb-price-strip"><div><div class="nb-avg-price">₹28,000<span style="font-size:1.8rem;font-weight:400;color:rgba(255,255,255,.45)">/sqft</span></div><div class="nb-avg-label">Avg. market price</div></div><div class="nb-rating"><div class="nb-stars">★★★★★</div><div class="nb-rating-label">4.8 Liveability</div></div></div>
         <div class="nb-amen"><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-graduation-cap"></i></div><div><div class="nb-am-label">12 Schools</div><div class="nb-am-val">St. Andrew's, Rizvi</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-hospital"></i></div><div><div class="nb-am-label">8 Hospitals</div><div class="nb-am-val">Holy Family, Lilavati</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-shopping-bag"></i></div><div><div class="nb-am-label">Malls &amp; Markets</div><div class="nb-am-val">Linking Rd, Palladium</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-train"></i></div><div><div class="nb-am-label">Transit</div><div class="nb-am-val">Bandra Station 1.2km</div></div></div></div>
         <a href="listings.php?location=Bandra" class="nb-cta" onclick="event.stopPropagation()"><i class="fas fa-search"></i> View Listings in Bandra West</a>
       </div>
     </div>
-    <div class="nb" onclick="location='listings.php?location=Andheri'" id="nb1">
+    <div class="nb" onclick="location='listings.php?location=Andheri'">
       <div class="nb-img-wrap">
-        <div class="nb-slide nba" data-nb="1"><img src="https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=900&q=88&auto=format" alt="Andheri West"></div>
+        <div class="nb-slide nba" data-nb="1"><img src="https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=900&q=88&auto=format" alt="Andheri"></div>
         <div class="nb-slide" data-nb="1"><img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=900&q=88&auto=format" alt="Andheri 2"></div>
         <div class="nb-slide" data-nb="1"><img src="https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?w=900&q=88&auto=format" alt="Andheri 3"></div>
         <div class="nb-slide" data-nb="1"><img src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=900&q=88&auto=format" alt="Andheri 4"></div>
         <div class="nb-slide" data-nb="1"><img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=900&q=88&auto=format" alt="Andheri 5"></div>
       </div>
       <div class="nb-ov"></div>
-      <div class="nb-static"><div class="nb-city-name">Andheri West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['andheri']??0) + 2; ?> listings available</div></div>
+      <div class="nb-static"><div class="nb-city-name">Andheri West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['andheri']??0)+2; ?> listings</div></div>
       <div class="nb-detail">
         <div class="nb-price-strip"><div><div class="nb-avg-price">₹22,000<span style="font-size:1.8rem;font-weight:400;color:rgba(255,255,255,.45)">/sqft</span></div><div class="nb-avg-label">Avg. market price</div></div><div class="nb-rating"><div class="nb-stars">★★★★★</div><div class="nb-rating-label">4.7 Liveability</div></div></div>
         <div class="nb-amen"><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-graduation-cap"></i></div><div><div class="nb-am-label">15 Schools</div><div class="nb-am-val">Ryan Int'l, Orchid</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-hospital"></i></div><div><div class="nb-am-label">Top Hospitals</div><div class="nb-am-val">Kokilaben, Nanavati</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-shopping-bag"></i></div><div><div class="nb-am-label">Malls</div><div class="nb-am-val">InOrbit, Citi Mall</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-subway"></i></div><div><div class="nb-am-label">Metro</div><div class="nb-am-val">Andheri Metro 0.5km</div></div></div></div>
         <a href="listings.php?location=Andheri" class="nb-cta" onclick="event.stopPropagation()"><i class="fas fa-search"></i> View Listings in Andheri West</a>
       </div>
     </div>
-    <div class="nb" onclick="location='listings.php?location=Borivali'" id="nb2">
+    <div class="nb" onclick="location='listings.php?location=Borivali'">
       <div class="nb-img-wrap">
-        <div class="nb-slide nba" data-nb="2"><img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=900&q=88&auto=format" alt="Borivali West"></div>
+        <div class="nb-slide nba" data-nb="2"><img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=900&q=88&auto=format" alt="Borivali"></div>
         <div class="nb-slide" data-nb="2"><img src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=900&q=88&auto=format" alt="Borivali 2"></div>
         <div class="nb-slide" data-nb="2"><img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=900&q=88&auto=format" alt="Borivali 3"></div>
         <div class="nb-slide" data-nb="2"><img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&q=88&auto=format" alt="Borivali 4"></div>
         <div class="nb-slide" data-nb="2"><img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=900&q=88&auto=format" alt="Borivali 5"></div>
       </div>
       <div class="nb-ov"></div>
-      <div class="nb-static"><div class="nb-city-name">Borivali West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['hinjewadi']??0) + ($area_counts['baner']??0) + 2; ?> listings available</div></div>
+      <div class="nb-static"><div class="nb-city-name">Borivali West</div><div class="nb-state">Mumbai, Maharashtra</div><div class="nb-listing-count"><i class="fas fa-building"></i> <?= ($area_counts['hinjewadi']??0)+($area_counts['baner']??0)+2; ?> listings</div></div>
       <div class="nb-detail">
         <div class="nb-price-strip"><div><div class="nb-avg-price">₹16,500<span style="font-size:1.8rem;font-weight:400;color:rgba(255,255,255,.45)">/sqft</span></div><div class="nb-avg-label">Avg. market price</div></div><div class="nb-rating"><div class="nb-stars">★★★★☆</div><div class="nb-rating-label">4.5 Liveability</div></div></div>
         <div class="nb-amen"><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-graduation-cap"></i></div><div><div class="nb-am-label">18 Schools</div><div class="nb-am-val">Carmel, Shri MM</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-hospital"></i></div><div><div class="nb-am-label">10 Hospitals</div><div class="nb-am-val">Wockhardt, Apex</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-tree"></i></div><div><div class="nb-am-label">National Park</div><div class="nb-am-val">Sanjay Gandhi NP 2km</div></div></div><div class="nb-am"><div class="nb-am-ic"><i class="fas fa-train"></i></div><div><div class="nb-am-label">Transit</div><div class="nb-am-val">Borivali Station 1km</div></div></div></div>
@@ -905,9 +868,9 @@ while($row = $sel_areas->fetch(PDO::FETCH_ASSOC)){
 <!-- EMI CALCULATOR -->
 <section class="emi-sec">
   <div class="emi-inner">
-    <div class="emi-left reveal"><div class="eyebrow">Financial Tools</div><h2 class="sec-title">EMI <em>Calculator</em></h2><p class="sec-sub">Estimate your monthly home loan payment instantly. Adjust loan amount, interest rate and tenure to plan your purchase.</p><br><div class="trust-row" style="margin-top:1rem;"><div class="tr-item"><i class="fas fa-landmark"></i> All major banks supported</div><div class="tr-item"><i class="fas fa-percentage"></i> Rates from 8.5% p.a.</div></div></div>
+    <div class="emi-left reveal"><div class="eyebrow">Financial Tools</div><h2 class="sec-title">EMI <em>Calculator</em></h2><p class="sec-sub">Estimate your monthly home loan payment instantly.</p><br><div class="trust-row" style="margin-top:1rem;"><div class="tr-item"><i class="fas fa-landmark"></i> All major banks supported</div><div class="tr-item"><i class="fas fa-percentage"></i> Rates from 8.5% p.a.</div></div></div>
     <div class="emi-right reveal" style="transition-delay:.1s">
-      <div class="emi-output"><div class="emi-output-label">Monthly EMI</div><div class="emi-output-n" id="emiN"><span>₹</span><span id="emiVal">42,500</span></div><div class="emi-output-sub" id="emiSub">on ₹50L loan at 8.5% for 20 years</div></div>
+      <div class="emi-output"><div class="emi-output-label">Monthly EMI</div><div class="emi-output-n"><span>₹</span><span id="emiVal">42,500</span></div><div class="emi-output-sub" id="emiSub">on ₹50L loan at 8.5% for 20 years</div></div>
       <div class="emi-breakdown"><div class="emib"><div class="emib-n" id="ebLoan">₹50L</div><div class="emib-l">Loan Amount</div></div><div class="emib"><div class="emib-n" id="ebRate">8.5%</div><div class="emib-l">Interest Rate</div></div><div class="emib"><div class="emib-n" id="ebTenure">20 Yrs</div><div class="emib-l">Tenure</div></div></div>
       <div class="emi-sliders">
         <div class="emi-field"><label>Loan Amount <span id="eLoanL">₹50 Lakh</span></label><input type="range" class="emi-range" id="eLoan" min="10" max="500" value="50" oninput="calcEMI()"></div>
@@ -919,24 +882,7 @@ while($row = $sel_areas->fetch(PDO::FETCH_ASSOC)){
 </section>
 <!-- BECOME AN AGENT -->
 <section class="agent-sec" id="agentSec">
-  <div class="agent-sec-bg">
-    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-      <polygon points="720,40 820,200 720,360 620,200" fill="none" stroke="#d62828" stroke-width="1"/>
-      <polygon points="720,80 800,200 720,320 640,200" fill="none" stroke="#d62828" stroke-width=".5"/>
-      <path d="M0,0 L120,0 L120,20 L20,20 L20,120 L0,120 Z" fill="none" stroke="#d62828" stroke-width="1"/>
-      <path d="M1440,0 L1320,0 L1320,20 L1420,20 L1420,120 L1440,120 Z" fill="none" stroke="#d62828" stroke-width="1"/>
-      <path d="M0,900 L120,900 L120,880 L20,880 L20,780 L0,780 Z" fill="none" stroke="#d62828" stroke-width="1"/>
-      <path d="M1440,900 L1320,900 L1320,880 L1420,880 L1420,780 L1440,780 Z" fill="none" stroke="#d62828" stroke-width="1"/>
-      <g stroke="#d62828" stroke-width=".6"><line x1="100" y1="280" x2="140" y2="280"/><line x1="120" y1="260" x2="120" y2="300"/><line x1="300" y1="180" x2="340" y2="180"/><line x1="320" y1="160" x2="320" y2="200"/><line x1="1100" y1="280" x2="1140" y2="280"/><line x1="1120" y1="260" x2="1120" y2="300"/><line x1="1300" y1="480" x2="1340" y2="480"/><line x1="1320" y1="460" x2="1320" y2="500"/></g>
-      <polygon points="80,450 140,415 200,450 200,520 140,555 80,520" fill="none" stroke="#d62828" stroke-width=".8"/>
-      <polygon points="1360,450 1420,415 1440,450 1440,520 1420,555 1360,520" fill="none" stroke="#d62828" stroke-width=".8"/>
-      <circle cx="400" cy="120" r="60" fill="none" stroke="#d62828" stroke-width=".7"/>
-      <circle cx="400" cy="120" r="40" fill="none" stroke="#d62828" stroke-width=".4"/>
-      <circle cx="1040" cy="780" r="60" fill="none" stroke="#d62828" stroke-width=".7"/>
-      <circle cx="1040" cy="780" r="40" fill="none" stroke="#d62828" stroke-width=".4"/>
-      <path d="M 520 900 Q 720 750 920 900" fill="none" stroke="#d62828" stroke-width=".8"/>
-    </svg>
-  </div>
+  <div class="agent-sec-bg"><svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><polygon points="720,40 820,200 720,360 620,200" fill="none" stroke="#d62828" stroke-width="1"/><polygon points="720,80 800,200 720,320 640,200" fill="none" stroke="#d62828" stroke-width=".5"/><path d="M0,0 L120,0 L120,20 L20,20 L20,120 L0,120 Z" fill="none" stroke="#d62828" stroke-width="1"/><path d="M1440,0 L1320,0 L1320,20 L1420,20 L1420,120 L1440,120 Z" fill="none" stroke="#d62828" stroke-width="1"/><path d="M0,900 L120,900 L120,880 L20,880 L20,780 L0,780 Z" fill="none" stroke="#d62828" stroke-width="1"/><path d="M1440,900 L1320,900 L1320,880 L1420,880 L1420,780 L1440,780 Z" fill="none" stroke="#d62828" stroke-width="1"/><circle cx="400" cy="120" r="60" fill="none" stroke="#d62828" stroke-width=".7"/><circle cx="1040" cy="780" r="60" fill="none" stroke="#d62828" stroke-width=".7"/></svg></div>
   <div class="agent-banner">
     <div class="agent-banner-img"><img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1400&q=88&auto=format" alt="Agent"><div class="agent-banner-img-ov"></div></div>
     <div class="agent-banner-content reveal">
@@ -956,16 +902,16 @@ while($row = $sel_areas->fetch(PDO::FETCH_ASSOC)){
   </div>
   <div class="agent-benefits-wrap">
     <div class="agent-benefits-grid">
-      <div class="ag-benefit reveal"><div class="ag-b-icon"><i class="fas fa-shield-check"></i></div><div class="ag-b-title">Verified Agent Badge</div><div class="ag-b-desc">A trust signal that buyers respect. Your profile is highlighted across all search results.</div></div>
+      <div class="ag-benefit reveal"><div class="ag-b-icon"><i class="fas fa-shield-alt"></i></div><div class="ag-b-title">Verified Agent Badge</div><div class="ag-b-desc">A trust signal that buyers respect. Your profile is highlighted across all search results.</div></div>
       <div class="ag-benefit reveal" style="transition-delay:.07s"><div class="ag-b-icon"><i class="fas fa-building"></i></div><div class="ag-b-title">Unlimited Listings</div><div class="ag-b-desc">Post and manage multiple properties with full photo support and pricing control.</div></div>
-      <div class="ag-benefit reveal" style="transition-delay:.14s"><div class="ag-b-icon"><i class="fas fa-phone-volume"></i></div><div class="ag-b-title">Direct Buyer Leads</div><div class="ag-b-desc">Qualified enquiries and visit requests delivered straight to your profile. No middlemen.</div></div>
+      <div class="ag-benefit reveal" style="transition-delay:.14s"><div class="ag-b-icon"><i class="fas fa-phone-volume"></i></div><div class="ag-b-title">Direct Buyer Leads</div><div class="ag-b-desc">Qualified enquiries and visit requests delivered straight to your profile.</div></div>
       <div class="ag-benefit reveal" style="transition-delay:.07s"><div class="ag-b-icon"><i class="fas fa-chart-bar"></i></div><div class="ag-b-title">Analytics Dashboard</div><div class="ag-b-desc">See how many people viewed, saved and enquired about each listing in real time.</div></div>
       <div class="ag-benefit reveal" style="transition-delay:.14s"><div class="ag-b-icon"><i class="fas fa-star"></i></div><div class="ag-b-title">Priority Placement</div><div class="ag-b-desc">Agent listings rank higher in search and appear in featured sections on the homepage.</div></div>
-      <div class="ag-benefit reveal" style="transition-delay:.21s"><div class="ag-b-icon"><i class="fas fa-headset"></i></div><div class="ag-b-title">Dedicated Support</div><div class="ag-b-desc">A dedicated account manager assists you with every listing, documentation and buyer query.</div></div>
+      <div class="ag-benefit reveal" style="transition-delay:.21s"><div class="ag-b-icon"><i class="fas fa-headset"></i></div><div class="ag-b-title">Dedicated Support</div><div class="ag-b-desc">A dedicated account manager assists you with every listing and buyer query.</div></div>
     </div>
     <div class="agent-warning reveal">
       <div class="aw-icon"><i class="fas fa-lock"></i></div>
-      <div><div class="aw-title">Listing is Locked Until You're Approved</div><div class="aw-text">Regular registered users cannot post properties directly. All listings must come from verified agents. Apply below — approval is fair, transparent and based purely on merit.</div></div>
+      <div><div class="aw-title">Listing is Locked Until You're Approved</div><div class="aw-text">Regular registered users cannot post properties directly. Apply below — approval is fair, transparent and based purely on merit.</div></div>
     </div>
     <div class="agent-cta-row reveal">
       <button class="agent-apply-btn" onclick="openPopup('agentPopup')"><i class="fas fa-paper-plane"></i> Apply to Become an Agent</button>
@@ -983,11 +929,11 @@ while($row = $sel_areas->fetch(PDO::FETCH_ASSOC)){
   </div>
   <div class="foot-bot"><p class="foot-copy">© 2026 <span>MyEstate</span>. Made with ♥ in Mumbai.</p><div class="foot-bot-links"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Cookies</a></div></div>
 </footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
 <script>
 const obs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');obs.unobserve(x.target);}}),{threshold:.05});
 document.querySelectorAll('.reveal').forEach(r=>obs.observe(r));
 window.addEventListener('scroll',()=>document.getElementById('mainNav').classList.toggle('scrolled',scrollY>40));
-// Task 3: Click-based nav dropdown (stays open when moving to items)
 const navUserEl=document.getElementById('navUser');
 if(navUserEl){
   const navDropMenu=navUserEl.querySelector('.nav-drop-menu');
@@ -1000,31 +946,22 @@ function confirmLogout(){
   swal({title:'Logout?',text:'Are you sure you want to logout?',icon:'warning',buttons:['Cancel','Logout'],dangerMode:true})
   .then(ok=>{if(ok)window.location='components/user_logout.php';});
 }
-// Neighbourhood image carousels — auto-cycle 5 images per card
+// Neighbourhood carousels
 (function(){
-  const nbCounts = [5, 5, 5]; // images per neighbourhood (0=Bandra,1=Andheri,2=Borivali)
-  const nbCur = [0, 0, 0];
-  function nbGoSlide(nb, idx) {
-    const slides = document.querySelectorAll(`.nb-slide[data-nb="${nb}"]`);
-    slides.forEach(s => s.classList.remove('nba'));
-    if(slides[idx]) slides[idx].classList.add('nba');
-    nbCur[nb] = idx;
+  const nbCounts=[5,5,5];const nbCur=[0,0,0];
+  function nbGoSlide(nb,idx){
+    document.querySelectorAll(`.nb-slide[data-nb="${nb}"]`).forEach(s=>s.classList.remove('nba'));
+    const slides=document.querySelectorAll(`.nb-slide[data-nb="${nb}"]`);
+    if(slides[idx])slides[idx].classList.add('nba');
+    nbCur[nb]=idx;
   }
-  setInterval(() => {
-    for(let i=0; i<3; i++) {
-      const next = (nbCur[i]+1) % nbCounts[i];
-      nbGoSlide(i, next);
-    }
-  }, 3500);
-  // Stagger starting slide so all 3 don't change at same time
-  setTimeout(()=>nbGoSlide(1,1), 1200);
-  setTimeout(()=>nbGoSlide(2,2), 2400);
+  setInterval(()=>{for(let i=0;i<3;i++){nbGoSlide(i,(nbCur[i]+1)%nbCounts[i]);}},3500);
+  setTimeout(()=>nbGoSlide(1,1),1200);
+  setTimeout(()=>nbGoSlide(2,2),2400);
 })();
-document.querySelectorAll('.lc-save').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();b.classList.toggle('saved');}));
 function toggleSave(btn,propId){
   btn.classList.toggle('saved');
-  const fd=new FormData();
-  fd.append('property_id',propId);
+  const fd=new FormData();fd.append('property_id',propId);
   fetch('components/save_send.php',{method:'POST',body:fd}).catch(()=>{});
 }
 function openPopup(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
@@ -1035,26 +972,19 @@ let selSlot='';
 function pickSlot(el){document.querySelectorAll('.ts').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');selSlot=el.textContent;}
 let vStep=1;
 function vpGo(n){
-  if(n===2){
-    if(!document.getElementById('vp-prop').value||!document.getElementById('vp-date').value||!document.getElementById('vp-purpose').value||!selSlot){
-      alert('Please fill all required fields and select a time slot.');return;
-    }
-  }
+  if(n===2){if(!document.getElementById('vp-prop').value||!document.getElementById('vp-date').value||!document.getElementById('vp-purpose').value||!selSlot){alert('Please fill all required fields and select a time slot.');return;}}
   if(n===3){
     const nm=document.getElementById('vp-name')?.value.trim();
     const ph=document.getElementById('vp-phone')?.value.trim();
     const em=document.getElementById('vp-email')?.value.trim();
     if(!nm||!ph||!em){alert('Please fill your name, phone and email.');return;}
-    // Submit booking via AJAX
     const fd=new FormData();
     fd.append('property_id',document.getElementById('vp-prop').value);
     fd.append('visit_date',document.getElementById('vp-date').value);
     fd.append('time_slot',selSlot);
     fd.append('purpose',document.getElementById('vp-purpose').value);
     fd.append('notes',document.getElementById('vp-notes')?.value||'');
-    fd.append('vp_name',nm);
-    fd.append('vp_phone',ph);
-    fd.append('vp_email',em);
+    fd.append('vp_name',nm);fd.append('vp_phone',ph);fd.append('vp_email',em);
     fd.append('vp_budget',document.getElementById('vp-budget')?.value||'');
     const btn=document.querySelector('.vp-fwd');
     if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Confirming...';}
@@ -1073,11 +1003,7 @@ function vpGo(n){
           alert('Error: '+(data.msg||'Could not save booking. Please try again.'));
           if(btn){btn.disabled=false;btn.innerHTML='Confirm Booking <i class="fas fa-check"></i>';}
         }
-      })
-      .catch(()=>{
-        alert('Network error. Please check your connection.');
-        if(btn){btn.disabled=false;btn.innerHTML='Confirm Booking <i class="fas fa-check"></i>';}
-      });
+      }).catch(()=>{alert('Network error.');if(btn){btn.disabled=false;btn.innerHTML='Confirm Booking <i class="fas fa-check"></i>';}});
     return;
   }
   document.querySelectorAll('.vp-panel').forEach(p=>p.classList.remove('act'));
@@ -1088,19 +1014,12 @@ function vpGo(n){
   document.getElementById('vpanel'+n).classList.add('act');
   vStep=n;
 }
-// Slider navigation for latest listings
 let sliderOffset=0;
 function sliderNav(dir){
-  const cards=document.querySelectorAll('#lstSlider .lc');
-  const total=cards.length;
+  const cards=document.querySelectorAll('#lstSlider .lc');const total=cards.length;
   if(total<=3)return;
   sliderOffset=(sliderOffset+dir+total)%total;
-  cards.forEach((c,i)=>{
-    const pos=(i-sliderOffset+total)%total;
-    c.style.display=pos<3?'':'none';
-    c.classList.toggle('big',sliderOffset===i);
-    c.classList.toggle('side',sliderOffset!==i);
-  });
+  cards.forEach((c,i)=>{const pos=(i-sliderOffset+total)%total;c.style.display=pos<3?'':'none';c.classList.toggle('big',sliderOffset===i);c.classList.toggle('side',sliderOffset!==i);});
 }
 let apStep=1;
 function apGo(n){
@@ -1134,24 +1053,12 @@ function calcEMI(){
   document.getElementById('emiSub').textContent='on ₹'+loan+'L loan at '+rate+'% for '+ten+' years';
 }
 document.querySelectorAll('.ct').forEach(card=>{
-  card.addEventListener('mousemove',e=>{
-    const r=card.getBoundingClientRect();
-    const x=e.clientX-r.left,y=e.clientY-r.top;
-    const cx=r.width/2,cy=r.height/2;
-    const rx=(cy-y)/cy*12,ry=(x-cx)/cx*12;
-    card.style.transform=`perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.03)`;
-  });
+  card.addEventListener('mousemove',e=>{const r=card.getBoundingClientRect();const x=e.clientX-r.left,y=e.clientY-r.top;const cx=r.width/2,cy=r.height/2;const rx=(cy-y)/cy*12,ry=(x-cx)/cx*12;card.style.transform=`perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.03)`;});
   card.addEventListener('mouseleave',()=>{card.style.transform='perspective(800px) rotateX(0) rotateY(0) scale(1)';card.style.transition='transform .5s var(--ease),box-shadow .4s var(--ease)';});
   card.addEventListener('mouseenter',()=>{card.style.transition='transform .08s linear,box-shadow .4s';});
 });
 const feedMessages=<?php
-echo json_encode($feed_items ? array_map(function($fi){
-  return ['icon'=>$fi['icon'],'cls'=>$fi['cls'],'text'=>$fi['text'],'tag'=>$fi['tag'],'time'=>$fi['time']];
-}, $feed_items) : [
-  ['icon'=>'plus','cls'=>'new','text'=>'<strong>New listing added</strong> — Check back soon','tag'=>'Property','time'=>'just now'],
-  ['icon'=>'eye','cls'=>'view','text'=>'Activity tracking is <strong>live</strong>','tag'=>'View','time'=>'1 min ago'],
-  ['icon'=>'heart','cls'=>'save','text'=>'Saves will appear <strong>here</strong>','tag'=>'Save','time'=>'2 min ago'],
-]);
+echo json_encode($feed_items ? array_map(function($fi){return ['icon'=>$fi['icon'],'cls'=>$fi['cls'],'text'=>$fi['text'],'tag'=>$fi['tag'],'time'=>$fi['time']];},$feed_items) : [['icon'=>'plus','cls'=>'new','text'=>'<strong>New listing added</strong> — Check back soon','tag'=>'Property','time'=>'just now']]);
 ?>;
 let feedIdx=0;
 setInterval(()=>{
@@ -1166,14 +1073,11 @@ setInterval(()=>{
   if(stream.children.length>8)stream.lastChild.remove();
   feedIdx++;
 },5000);
-</script>
-<!-- Hero Image Slider -->
-<script>
+// Hero image slider
 (function(){
-  var imgs=[document.getElementById('hrImg0'),document.getElementById('hrImg1'),document.getElementById('hrImg2'),document.getElementById('hrImg3'),document.getElementById('hrImg4')];
+  var imgs=document.querySelectorAll('.hr-sl');
   var dotsWrap=document.getElementById('hrDots');
   var cur=0;
-  // Build dots
   imgs.forEach(function(_,i){
     var d=document.createElement('button');
     d.className='hr-dot'+(i===0?' on':'');
@@ -1182,16 +1086,31 @@ setInterval(()=>{
     dotsWrap.appendChild(d);
   });
   function goSlide(n){
-    imgs[cur].classList.remove('hr-on');imgs[cur].style.opacity='';
+    imgs[cur].style.opacity='0';imgs[cur].classList.remove('hr-on');
     dotsWrap.children[cur].classList.remove('on');
     cur=n;
-    imgs[cur].classList.add('hr-on');if(cur===0){imgs[cur].style.opacity='1';}
+    imgs[cur].style.opacity='1';imgs[cur].classList.add('hr-on');
     dotsWrap.children[cur].classList.add('on');
   }
   function nextSlide(){goSlide((cur+1)%imgs.length);}
-  // Show first slide
-  imgs[0].classList.add('hr-on');imgs[0].style.opacity='1';
+  imgs[0].style.opacity='1';imgs[0].classList.add('hr-on');
   var timer=setInterval(nextSlide,5000);
+})();
+// Listing card image slider
+(function(){
+  function initLcSliders(){
+    document.querySelectorAll('.lc-img').forEach(function(container){
+      var slides=container.querySelectorAll('.lc-sl-img');
+      if(!slides.length)return;
+      var cur=0;
+      var initialOn=container.querySelector('.lc-sl-on');
+      if(initialOn){cur=Array.from(slides).indexOf(initialOn);}
+      slides[cur].style.opacity='1';
+      if(slides.length<2)return;
+      setInterval(function(){slides[cur].style.opacity='0';cur=(cur+1)%slides.length;slides[cur].style.opacity='1';},4000);
+    });
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',initLcSliders);}else{initLcSliders();}
 })();
 </script>
 </body>

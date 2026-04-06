@@ -1,4 +1,4 @@
-<?php  
+<?php
 include 'components/connect.php';
 $user_id = validate_user_cookie($conn);
 if(!$user_id){
@@ -7,14 +7,12 @@ if(!$user_id){
 }
 include 'components/save_send.php';
 
-// Fetch user info
 $sel_user = $conn->prepare("SELECT name FROM `users` WHERE id = ? LIMIT 1");
 $sel_user->execute([$user_id]);
 $u = $sel_user->fetch(PDO::FETCH_ASSOC);
-$user_name = $u ? $u['name'] : 'User';
+$user_name    = $u ? $u['name'] : 'User';
 $user_initial = strtoupper(substr($user_name, 0, 1));
 
-// Count saved
 $sel_saved_cnt = $conn->prepare("SELECT COUNT(*) as cnt FROM `saved` WHERE user_id = ?");
 $sel_saved_cnt->execute([$user_id]);
 $saved_count = $sel_saved_cnt->fetch(PDO::FETCH_ASSOC)['cnt'];
@@ -45,10 +43,8 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overf
 ::-webkit-scrollbar{width:3px;}
 ::-webkit-scrollbar-thumb{background:var(--r);}
 a{text-decoration:none;}
-
 .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s var(--ease),transform .7s var(--ease);}
 .reveal.in{opacity:1;transform:translateY(0);}
-
 .nav{position:fixed;top:0;left:0;right:0;z-index:999;height:var(--nav-h);padding:0 6%;display:flex;align-items:center;justify-content:space-between;background:rgba(253,241,241,.94);backdrop-filter:blur(24px);border-bottom:1px solid var(--line);transition:box-shadow .3s;}
 .nav.scrolled{box-shadow:0 4px 40px rgba(214,40,40,.1);}
 .logo{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:700;color:var(--ink);text-decoration:none;}
@@ -75,7 +71,6 @@ a{text-decoration:none;}
 .nd-danger{color:#c0392b!important;}
 .nd-danger i{color:#c0392b!important;}
 .nd-danger:hover{background:#fff5f5!important;}
-
 .page-hero{padding-top:var(--nav-h);background:linear-gradient(145deg,#fff9f9 0%,#fdf1f1 45%,#fae8e8 100%);position:relative;overflow:hidden;}
 .page-hero::before{content:'';position:absolute;top:-18rem;right:-12rem;width:50rem;height:50rem;border-radius:50%;border:1px solid rgba(214,40,40,.07);pointer-events:none;}
 .page-hero-inner{max-width:130rem;margin:0 auto;padding:5rem 6% 4rem;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:2rem;}
@@ -85,13 +80,11 @@ a{text-decoration:none;}
 .page-title{font-family:'Cormorant Garamond',serif;font-size:clamp(4rem,5vw,6.5rem);font-weight:700;color:var(--ink);letter-spacing:-.03em;line-height:.92;}
 .page-title em{font-style:italic;color:var(--r);}
 .page-sub{font-size:1.4rem;color:var(--ink3);line-height:1.7;max-width:48rem;margin-top:.8rem;}
-
 .saved-sec{max-width:130rem;margin:0 auto;padding:4rem 6% 8rem;}
 .saved-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(36rem,1fr));gap:2.4rem;}
-
 .pc{border-radius:2.4rem;overflow:hidden;border:1.5px solid var(--line);background:var(--white);transition:all .4s var(--ease);display:flex;flex-direction:column;}
 .pc:hover{transform:translateY(-7px);box-shadow:var(--sh2);}
-.pc-img{position:relative;height:24rem;overflow:hidden;cursor:pointer;}
+.pc-img{position:relative;height:24rem;overflow:hidden;cursor:pointer;background:#f5d0d0;}
 .pc-img img{width:100%;height:100%;object-fit:cover;transition:transform .8s var(--ease);}
 .pc:hover .pc-img img{transform:scale(1.06);}
 .pc-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(15,2,2,.6) 0%,transparent 55%);pointer-events:none;}
@@ -101,6 +94,10 @@ a{text-decoration:none;}
 .pc-save:hover{background:var(--rp);transform:scale(1.1);}
 .pc-price-tag{position:absolute;bottom:1.3rem;right:1.3rem;background:rgba(15,2,2,.78);backdrop-filter:blur(12px);padding:.55rem 1.3rem;border-radius:99px;}
 .pc-price-tag span{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;color:#fff;}
+/* No-image fallback */
+.pc-no-img{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--rp),var(--rp2));color:var(--r);}
+.pc-no-img i{font-size:4rem;margin-bottom:1rem;opacity:.4;}
+.pc-no-img span{font-size:1.2rem;font-weight:600;color:var(--ink3);}
 .pc-body{padding:2.2rem 2.4rem;display:flex;flex-direction:column;flex:1;}
 .pc-type{font-size:.95rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--r);margin-bottom:.4rem;}
 .pc-name{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:700;color:var(--ink);margin-bottom:.4rem;line-height:1.15;}
@@ -117,14 +114,12 @@ a{text-decoration:none;}
 .pca.e:hover{background:var(--rp2);}
 .pca.rm{background:var(--white);color:#c0392b;border:1.5px solid rgba(192,57,43,.2);}
 .pca.rm:hover{background:#fff5f5;}
-
 .empty-state{text-align:center;padding:8rem 2rem;}
 .empty-icon{width:12rem;height:12rem;border-radius:50%;background:var(--rp);display:grid;place-items:center;font-size:4.5rem;color:var(--r);margin:0 auto 2.5rem;border:2px dashed rgba(214,40,40,.2);}
 .empty-state h3{font-family:'Cormorant Garamond',serif;font-size:3.2rem;font-weight:700;color:var(--ink);margin-bottom:.8rem;}
 .empty-state p{font-size:1.4rem;color:var(--ink3);margin-bottom:2.5rem;max-width:40rem;margin-left:auto;margin-right:auto;}
 .empty-btn{display:inline-flex;align-items:center;gap:.8rem;background:linear-gradient(135deg,var(--r),var(--rd));color:#fff;border:none;border-radius:99px;padding:1.2rem 3rem;font-size:1.3rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 8px 24px rgba(214,40,40,.3);transition:all .25s;text-decoration:none;}
 .empty-btn:hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(214,40,40,.45);}
-
 .footer{background:linear-gradient(135deg,#fff0f0,#fde0e0);border-top:1px solid var(--line);padding:6rem 6% 3.5rem;}
 .foot-grid{display:grid;grid-template-columns:2.2fr 1fr 1fr 1.3fr;gap:5rem;padding-bottom:4rem;border-bottom:1px solid var(--line);max-width:130rem;margin:0 auto;}
 .foot-logo{font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:700;color:var(--ink);display:block;margin-bottom:1.2rem;}
@@ -148,7 +143,6 @@ a{text-decoration:none;}
 .foot-bot-links{display:flex;gap:2rem;}
 .foot-bot-links a{font-size:1.2rem;color:var(--ink3);transition:color .2s;}
 .foot-bot-links a:hover{color:var(--r);}
-
 @media(max-width:1100px){.foot-grid{grid-template-columns:1fr 1fr;gap:3rem;}.saved-grid{grid-template-columns:repeat(auto-fill,minmax(32rem,1fr));}}
 @media(max-width:768px){
   .nav-center{display:none;}
@@ -172,7 +166,10 @@ a{text-decoration:none;}
     <a href="contact.php">Contact</a>
   </div>
   <div class="nav-right">
-    <a href="saved.php" class="nav-icon" style="border-color:var(--r);color:var(--r);background:var(--rp);"><i class="fas fa-heart"></i><?php if($saved_count > 0): ?><span class="nav-badge"><?= $saved_count; ?></span><?php endif; ?></a>
+    <a href="saved.php" class="nav-icon" style="border-color:var(--r);color:var(--r);background:var(--rp);">
+      <i class="fas fa-heart"></i>
+      <?php if($saved_count > 0): ?><span class="nav-badge"><?= $saved_count; ?></span><?php endif; ?>
+    </a>
     <div class="nav-user" id="navUser">
       <div class="nav-av"><?= $user_initial; ?></div>
       <span style="font-size:1.3rem;font-weight:700;color:var(--ink);"><?= htmlspecialchars($user_name); ?></span>
@@ -212,30 +209,43 @@ a{text-decoration:none;}
         $select_properties->execute([$fetch_saved['property_id']]);
         if($select_properties->rowCount() > 0){
           while($fetch_property = $select_properties->fetch(PDO::FETCH_ASSOC)){
-            $select_user = $conn->prepare("SELECT * FROM `users` WHERE id = ?");
-            $select_user->execute([$fetch_property['user_id']]);
-            $fetch_user = $select_user->fetch(PDO::FETCH_ASSOC);
 
-            $total_images = 1;
+            $total_images = 0;
+            if(!empty($fetch_property['image_01'])) $total_images++;
             if(!empty($fetch_property['image_02'])) $total_images++;
             if(!empty($fetch_property['image_03'])) $total_images++;
             if(!empty($fetch_property['image_04'])) $total_images++;
             if(!empty($fetch_property['image_05'])) $total_images++;
 
             $price_raw = $fetch_property['price'];
-            if($price_raw >= 10000000) $price_fmt = '₹' . round($price_raw / 10000000, 2) . ' Cr';
-            elseif($price_raw >= 100000) $price_fmt = '₹' . round($price_raw / 100000, 2) . ' L';
-            elseif($price_raw >= 1000) $price_fmt = '₹' . round($price_raw / 1000, 1) . 'K';
-            else $price_fmt = '₹' . number_format($price_raw);
+            if($price_raw >= 10000000)      $price_fmt = '₹' . round($price_raw / 10000000, 2) . ' Cr';
+            elseif($price_raw >= 100000)    $price_fmt = '₹' . round($price_raw / 100000, 2) . ' L';
+            elseif($price_raw >= 1000)      $price_fmt = '₹' . round($price_raw / 1000, 1) . 'K';
+            else                             $price_fmt = '₹' . number_format($price_raw);
+
+            // Build correct image path
+            $has_image    = !empty($fetch_property['image_01']);
+            $img_src      = $has_image ? 'uploaded_files/' . htmlspecialchars($fetch_property['image_01']) : '';
     ?>
     <div class="pc reveal">
       <form action="" method="POST" style="display:contents;">
         <input type="hidden" name="property_id" value="<?= $fetch_property['id']; ?>">
         <div class="pc-img" onclick="location='view_property.php?get_id=<?= $fetch_property['id']; ?>'">
-          <img src="uploaded_files/<?= $fetch_property['image_01']; ?>" alt="<?= htmlspecialchars($fetch_property['property_name']); ?>">
+          <?php if($has_image): ?>
+            <img src="<?= $img_src; ?>" alt="<?= htmlspecialchars($fetch_property['property_name']); ?>" loading="lazy">
+          <?php else: ?>
+            <div class="pc-no-img">
+              <i class="fas fa-home"></i>
+              <span>No Image Available</span>
+            </div>
+          <?php endif; ?>
           <div class="pc-ov"></div>
-          <div class="pc-badge"><i class="far fa-image"></i> <?= $total_images; ?> Photos</div>
-          <button type="submit" name="save" class="pc-save" title="Remove from saved"><i class="fas fa-heart"></i></button>
+          <div class="pc-badge">
+            <i class="far fa-image"></i> <?= $total_images > 0 ? $total_images . ' Photos' : 'No Photos'; ?>
+          </div>
+          <button type="submit" name="save" class="pc-save" title="Remove from saved">
+            <i class="fas fa-heart"></i>
+          </button>
           <div class="pc-price-tag"><span><?= $price_fmt; ?></span></div>
         </div>
         <div class="pc-body">
@@ -260,8 +270,7 @@ a{text-decoration:none;}
           }
         }
       }
-    } else {
-    ?>
+    } else { ?>
     <div class="empty-state" style="grid-column:1/-1;">
       <div class="empty-icon"><i class="far fa-heart"></i></div>
       <h3>No Saved Properties Yet</h3>
@@ -297,27 +306,14 @@ a{text-decoration:none;}
     </div>
     <div class="foot-col">
       <h4>Contact Us</h4>
-      <div class="fci">
-        <div class="fci-ic"><i class="fas fa-map-marker-alt"></i></div>
-        <div class="fci-t"><strong>Office</strong>Bandra West, Mumbai — 400050</div>
-      </div>
-      <div class="fci">
-        <div class="fci-ic"><i class="fas fa-phone-alt"></i></div>
-        <div class="fci-t"><strong>Phone</strong>+91 98765 43210</div>
-      </div>
-      <div class="fci">
-        <div class="fci-ic"><i class="fas fa-envelope"></i></div>
-        <div class="fci-t"><strong>Email</strong>hello@myestate.in</div>
-      </div>
+      <div class="fci"><div class="fci-ic"><i class="fas fa-map-marker-alt"></i></div><div class="fci-t"><strong>Office</strong>Bandra West, Mumbai — 400050</div></div>
+      <div class="fci"><div class="fci-ic"><i class="fas fa-phone-alt"></i></div><div class="fci-t"><strong>Phone</strong>+91 98765 43210</div></div>
+      <div class="fci"><div class="fci-ic"><i class="fas fa-envelope"></i></div><div class="fci-t"><strong>Email</strong>hello@myestate.in</div></div>
     </div>
   </div>
   <div class="foot-bot">
     <p class="foot-copy">© <?= date('Y'); ?> <span>MyEstate</span>. Made with ♥ in Mumbai.</p>
-    <div class="foot-bot-links">
-      <a href="#">Privacy</a>
-      <a href="#">Terms</a>
-      <a href="#">Cookies</a>
-    </div>
+    <div class="foot-bot-links"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Cookies</a></div>
   </div>
 </footer>
 
@@ -327,25 +323,15 @@ a{text-decoration:none;}
 const obs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');obs.unobserve(x.target);}}),{threshold:.05});
 document.querySelectorAll('.reveal').forEach(r=>obs.observe(r));
 window.addEventListener('scroll',()=>document.getElementById('mainNav').classList.toggle('scrolled',scrollY>40));
-
-// Profile dropdown toggle
 const navUser=document.getElementById('navUser');
 if(navUser){
-  navUser.addEventListener('click',function(e){
-    e.stopPropagation();
-    this.querySelector('.nav-drop-menu').classList.toggle('open');
-  });
-  document.addEventListener('click',function(e){
-    const m=navUser.querySelector('.nav-drop-menu');
-    if(!navUser.contains(e.target))m.classList.remove('open');
-  });
+  navUser.addEventListener('click',function(e){e.stopPropagation();this.querySelector('.nav-drop-menu').classList.toggle('open');});
+  document.addEventListener('click',function(e){const m=navUser.querySelector('.nav-drop-menu');if(!navUser.contains(e.target))m.classList.remove('open');});
   window.addEventListener('scroll',function(){navUser.querySelector('.nav-drop-menu').classList.remove('open');},{passive:true});
 }
-// Logout confirmation
 function confirmLogout(){
-  swal({title:'Logout?',text:'Are you sure you want to logout?',icon:'warning',
-    buttons:['Cancel','Logout'],dangerMode:true
-  }).then(ok=>{if(ok)window.location='components/user_logout.php';});
+  swal({title:'Logout?',text:'Are you sure you want to logout?',icon:'warning',buttons:['Cancel','Logout'],dangerMode:true})
+  .then(ok=>{if(ok)window.location='components/user_logout.php';});
 }
 </script>
 </body>

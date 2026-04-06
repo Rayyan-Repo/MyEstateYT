@@ -285,7 +285,7 @@ body{background:var(--bg);min-height:100vh;}
           $count_property->execute([$fetch_users['id']]);
           $total_properties = $count_property->fetchColumn();
           $row_count++;
-          $color = $avatar_colors[($fetch_users['id'] - 1) % count($avatar_colors)];
+          $color = $avatar_colors[$row_count % count($avatar_colors)];
           $initial = strtoupper(substr($fetch_users['name'], 0, 1));
           $delay = $row_count * 0.04;
           $has_props = $total_properties > 0 ? 'has-props' : 'no-props';
